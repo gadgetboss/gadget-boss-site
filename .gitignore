@@ -1,0 +1,5 @@
+.DS_Store
+crm.db
+__pycache__/
+*.py[cod]
+.env
