@@ -14,7 +14,7 @@ import threading
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DB_FILE = os.path.join(BASE_DIR, "crm.db")
 ALLOWED_ZOHO_DOMAINS = {"com", "eu", "in", "com.au"}
-STATIC_FILE_EXTENSIONS = {".css", ".html", ".ico", ".jpg", ".jpeg", ".js", ".png", ".svg", ".webp", ".woff", ".woff2"}
+STATIC_FILE_EXTENSIONS = {".css", ".html", ".ico", ".jpg", ".jpeg", ".js", ".jsx", ".json", ".png", ".svg", ".webp", ".woff", ".woff2"}
 CRM_ADMIN_USER = os.environ.get("GADGETBOSS_CRM_USER")
 CRM_ADMIN_PASSWORD = os.environ.get("GADGETBOSS_CRM_PASSWORD")
 ALLOWED_ORIGIN = os.environ.get("GADGETBOSS_ALLOWED_ORIGIN")
@@ -271,6 +271,11 @@ def run_background_sync():
 
 # HTTP API Request Handler
 class DynamicCRMServer(SimpleHTTPRequestHandler):
+    extensions_map = {
+        **SimpleHTTPRequestHandler.extensions_map,
+        ".jsx": "text/javascript",
+        ".json": "application/json",
+    }
 
     def _request_path(self):
         return urllib.parse.urlparse(self.path).path
@@ -285,7 +290,7 @@ class DynamicCRMServer(SimpleHTTPRequestHandler):
         if not resolved_path.startswith(BASE_DIR + os.sep):
             return False
         if os.path.isdir(resolved_path):
-            return relative_path in {"assets", "crm", "showcase"}
+            return relative_path in {"assets", "crm", "showcase", "pos", "legal", "dist", "docs"}
         return os.path.splitext(resolved_path)[1].lower() in STATIC_FILE_EXTENSIONS
 
     def _is_authorized_admin(self):
@@ -328,6 +333,9 @@ class DynamicCRMServer(SimpleHTTPRequestHandler):
             self.send_header("Access-Control-Allow-Origin", ALLOWED_ORIGIN)
             self.send_header("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
             self.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+        # Without an explicit directive browsers heuristically cache CSS/JS/images
+        # and serve stale assets for hours, so edits appear not to take effect.
+        self.send_header("Cache-Control", "no-store, must-revalidate")
         super().end_headers()
         
     def do_OPTIONS(self):

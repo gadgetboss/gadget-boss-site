@@ -1,0 +1,23 @@
+{
+  "name": "gadgetboss-website",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build:sync": "esbuild src/sync/browser.ts --bundle --format=iife --global-name=GadgetBossSync --outfile=dist/gadgetboss-sync.js --sourcemap",
+    "build:sync:esm": "esbuild src/sync/index.ts --bundle --format=esm --outfile=dist/gadgetboss-sync.esm.js --sourcemap",
+    "build": "npm run build:sync && npm run build:sync:esm",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "seed:sql": "node scripts/generate-seed-sql.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.25.0",
+    "typescript": "^5.8.2",
+    "vitest": "^3.0.8"
+  }
+}

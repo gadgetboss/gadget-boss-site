@@ -32,12 +32,12 @@
           },
           colors: {
             accent: {
-              gold: {
-                50: '#fdfcf7',
-                100: '#FAF6E6',
-                400: '#dfb76c',
-                500: '#c5a059', // Brushed Luxury Gold
-                600: '#ab8441',
+              blue: {
+                50: '#f6f8fd',
+                100: '#dde6f9',
+                400: '#7199e7',
+                500: '#4277df', // Signature Royal Blue
+                600: '#355fb2',
               },
               silver: {
                 300: '#e2e8f0',
@@ -56,7 +56,7 @@
             }
           },
           boxShadow: {
-            'glow-gold': '0 0 25px rgba(197, 160, 89, 0.15)',
+            'glow-blue': '0 0 25px rgba(66, 119, 223, 0.15)',
             'glow-silver': '0 0 25px rgba(203, 213, 225, 0.15)',
           },
           animation: {
@@ -122,7 +122,7 @@
 
   <!-- Interactive Spotlights Background -->
   <div class="fixed inset-0 pointer-events-none overflow-hidden z-0">
-    <div class="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-accent-gold-500/10 blur-[140px] animate-pulse-slow"></div>
+    <div class="absolute -top-[20%] -left-[10%] w-[60%] h-[60%] rounded-full bg-accent-blue-500/10 blur-[140px] animate-pulse-slow"></div>
     <div class="absolute top-[40%] -right-[15%] w-[50%] h-[50%] rounded-full bg-accent-silver-400/10 blur-[130px] animate-pulse-slow" style="animation-delay: 2s;"></div>
     <div class="absolute -bottom-[20%] left-[20%] w-[55%] h-[55%] rounded-full bg-cyan-500/5 blur-[150px] animate-pulse-slow" style="animation-delay: 1s;"></div>
     
@@ -139,7 +139,7 @@
 
     // --- INTERACTIVE GLOW CARD COMPONENT ---
     // Replicates Stripe/Linear hover border glow tracking the mouse coordinates
-    function GlowCard({ children, className = "", gradientColor = "rgba(197, 160, 89, 0.15)" }) {
+    function GlowCard({ children, className = "", gradientColor = "rgba(66, 119, 223, 0.15)" }) {
       const cardRef = useRef(null);
       const [coords, setCoords] = useState({ x: 0, y: 0 });
       const [isHovered, setIsHovered] = useState(false);
@@ -225,17 +225,17 @@
           <nav className="sticky top-0 z-50 w-full border-b border-zinc-800/40 bg-obsidian-950/80 backdrop-blur-xl">
             <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
               <a href="#top" className="flex items-center gap-3 group">
-                <img src="../assets/logo.png" alt="Logo" class="w-8 h-8 object-contain filter drop-shadow(0_2px_8px_rgba(197,160,89,0.3)) group-hover:rotate-6 transition-all duration-300" />
+                <img src="../assets/logo.png" alt="Logo" class="w-8 h-8 object-contain filter drop-shadow(0_2px_8px_rgba(66,119,223,0.3)) group-hover:rotate-6 transition-all duration-300" />
                 <span className="font-display font-black text-lg tracking-wider">
                   <span className="text-accent-silver-400">GADGET</span>
-                  <span className="text-accent-gold-500">BO$$</span>
-                  <span className="text-xs font-semibold ml-2 bg-accent-gold-500/10 text-accent-gold-400 border border-accent-gold-500/20 px-2 py-0.5 rounded-full uppercase tracking-widest font-sans">ENTERPRISE</span>
+                  <span className="text-accent-blue-500">BO$$</span>
+                  <span className="text-xs font-semibold ml-2 bg-accent-blue-500/10 text-accent-blue-400 border border-accent-blue-500/20 px-2 py-0.5 rounded-full uppercase tracking-widest font-sans">ENTERPRISE</span>
                 </span>
               </a>
               <div className="flex gap-6 items-center">
                 <button onClick={() => scrollToSection('bigcommerce')} className="text-sm font-semibold uppercase tracking-wider text-slate-400 hover:text-white transition-all">BigCommerce</button>
                 <button onClick={() => scrollToSection('beyond')} className="text-sm font-semibold uppercase tracking-wider text-slate-400 hover:text-white transition-all">Beyond Platform</button>
-                <a href="../" className="text-xs font-bold uppercase tracking-wider bg-accent-gold-500 hover:bg-accent-gold-400 text-obsidian-950 px-5 py-2.5 rounded-full flex items-center gap-2 shadow-glow-gold hover:shadow-[0_0_35px_rgba(197,160,89,0.35)] transition-all">
+                <a href="../" className="text-xs font-bold uppercase tracking-wider bg-accent-blue-500 hover:bg-accent-blue-400 text-obsidian-950 px-5 py-2.5 rounded-full flex items-center gap-2 shadow-glow-blue hover:shadow-[0_0_35px_rgba(66,119,223,0.35)] transition-all">
                   <span>LAUNCH STOREFRONT</span>
                   <i data-lucide="external-link" className="w-3.5 h-3.5 stroke-[3px]"></i>
                 </a>
@@ -245,13 +245,13 @@
 
           {/* HERO INTRO AREA */}
           <header class="max-w-7xl mx-auto px-6 pt-20 pb-12 text-center relative">
-            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-gold-500/10 border border-accent-gold-500/20 text-accent-gold-400 text-xs font-semibold uppercase tracking-widest mb-6">
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-accent-blue-500/10 border border-accent-blue-500/20 text-accent-blue-400 text-xs font-semibold uppercase tracking-widest mb-6">
               <i data-lucide="sparkles" className="w-3.5 h-3.5"></i>
               <span>High-Growth E-Commerce Architecture</span>
             </div>
             <h1 class="font-display font-extrabold text-5xl md:text-7xl text-white tracking-tight leading-none mb-6">
               Building Your <br />
-              <span class="bg-gradient-to-r from-accent-silver-400 via-accent-gold-500 to-accent-gold-400 bg-clip-text text-transparent filter drop-shadow-sm">Digital Storefront</span>
+              <span class="bg-gradient-to-r from-accent-silver-400 via-accent-blue-500 to-accent-blue-400 bg-clip-text text-transparent filter drop-shadow-sm">Digital Storefront</span>
             </h1>
             <p class="max-w-3xl mx-auto text-lg md:text-xl text-zinc-400 leading-relaxed font-light">
               An ecommerce website serves as your business's online storefront, allowing customers to browse products, make purchases, and engage from anywhere globally. The right platform streams operations, enhances experience, and drives exponential sales.
@@ -264,12 +264,12 @@
             {/* Section Header */}
             <div className="mb-16 border-b border-zinc-800/40 pb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
               <div className="max-w-2xl">
-                <span className="text-accent-gold-500 font-display font-semibold uppercase tracking-widest text-sm flex items-center gap-2 mb-2">
-                  <span className="w-6 h-px bg-accent-gold-500"></span> Enterprise Platform Capability
+                <span className="text-accent-blue-500 font-display font-semibold uppercase tracking-widest text-sm flex items-center gap-2 mb-2">
+                  <span className="w-6 h-px bg-accent-blue-500"></span> Enterprise Platform Capability
                 </span>
                 <h2 className="font-display font-black text-3xl md:text-5xl text-white uppercase tracking-tight">
                   Scalable Solutions for <br />
-                  <span className="bg-gradient-to-r from-accent-silver-400 to-accent-gold-500 bg-clip-text text-transparent">Growing Businesses</span>
+                  <span className="bg-gradient-to-r from-accent-silver-400 to-accent-blue-500 bg-clip-text text-transparent">Growing Businesses</span>
                 </h2>
               </div>
               <p className="max-w-md text-zinc-400 font-light leading-relaxed">
@@ -284,20 +284,20 @@
               <div className="lg:col-span-6 flex flex-col gap-6">
                 
                 {/* Card 1: Inventory Management */}
-                <GlowCard gradientColor="rgba(197, 160, 89, 0.12)" className="p-8 group">
+                <GlowCard gradientColor="rgba(66, 119, 223, 0.12)" className="p-8 group">
                   <div className="flex gap-6 items-start">
-                    <div className="w-12 h-12 rounded-xl bg-accent-gold-500/10 border border-accent-gold-500/20 text-accent-gold-500 flex items-center justify-content-center shrink-0 group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-12 h-12 rounded-xl bg-accent-blue-500/10 border border-accent-blue-500/20 text-accent-blue-500 flex items-center justify-content-center shrink-0 group-hover:scale-110 transition-transform duration-300">
                       <i data-lucide="boxes" className="w-6 h-6 m-auto"></i>
                     </div>
                     <div>
-                      <h3 className="font-display font-bold text-xl text-white mb-3 tracking-wide group-hover:text-accent-gold-400 transition-all">Inventory Management</h3>
+                      <h3 className="font-display font-bold text-xl text-white mb-3 tracking-wide group-hover:text-accent-blue-400 transition-all">Inventory Management</h3>
                       <p className="text-zinc-400 text-sm font-light leading-relaxed mb-4">
                         Maintain 100% database lock integrity across multiple supply lines and warehouses simultaneously. Automated updates ensure zero order collision.
                       </p>
                       <ul className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-semibold text-accent-silver-400 tracking-wide">
-                        <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-gold-500"></span> Real-time stock tracking</li>
-                        <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-gold-500"></span> Smart warehouse syncing</li>
-                        <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-gold-500"></span> Automated updates</li>
+                        <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-blue-500"></span> Real-time stock tracking</li>
+                        <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-blue-500"></span> Smart warehouse syncing</li>
+                        <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-blue-500"></span> Automated updates</li>
                       </ul>
                     </div>
                   </div>
@@ -314,7 +314,7 @@
                       <p className="text-zinc-400 text-sm font-light leading-relaxed mb-4">
                         Synchronize your vault catalog across social channels, external marketplaces, and boutique sites inside a unified order console.
                       </p>
-                      <ul className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-semibold text-accent-gold-500 tracking-wide">
+                      <ul className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-semibold text-accent-blue-500 tracking-wide">
                         <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-silver-400"></span> Amazon, IG, TikTok & Web</li>
                         <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-silver-400"></span> Unified Console</li>
                         <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-silver-400"></span> Cross-platform analytics</li>
@@ -324,20 +324,20 @@
                 </GlowCard>
 
                 {/* Card 3: International Commerce */}
-                <GlowCard gradientColor="rgba(197, 160, 89, 0.12)" className="p-8 group">
+                <GlowCard gradientColor="rgba(66, 119, 223, 0.12)" className="p-8 group">
                   <div className="flex gap-6 items-start">
-                    <div className="w-12 h-12 rounded-xl bg-accent-gold-500/10 border border-accent-gold-500/20 text-accent-gold-500 flex items-center justify-content-center shrink-0 group-hover:scale-110 transition-transform duration-300">
+                    <div className="w-12 h-12 rounded-xl bg-accent-blue-500/10 border border-accent-blue-500/20 text-accent-blue-500 flex items-center justify-content-center shrink-0 group-hover:scale-110 transition-transform duration-300">
                       <i data-lucide="globe" className="w-6 h-6 m-auto"></i>
                     </div>
                     <div>
-                      <h3 className="font-display font-bold text-xl text-white mb-3 tracking-wide group-hover:text-accent-gold-400 transition-all">International Commerce</h3>
+                      <h3 className="font-display font-bold text-xl text-white mb-3 tracking-wide group-hover:text-accent-blue-400 transition-all">International Commerce</h3>
                       <p className="text-zinc-400 text-sm font-light leading-relaxed mb-4">
                         Localize pricing with multi-currency dynamic calculations, cross-border shipping integrations, and localized taxation rules instantly.
                       </p>
                       <ul className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-semibold text-accent-silver-400 tracking-wide">
-                        <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-gold-500"></span> Multi-currency</li>
-                        <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-gold-500"></span> Global shipping</li>
-                        <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-gold-500"></span> localization tools</li>
+                        <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-blue-500"></span> Multi-currency</li>
+                        <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-blue-500"></span> Global shipping</li>
+                        <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-blue-500"></span> localization tools</li>
                       </ul>
                     </div>
                   </div>
@@ -354,7 +354,7 @@
                       <p className="text-zinc-400 text-sm font-light leading-relaxed mb-4">
                         Analyze conversion patterns with precision stats. Leverages AI models to discover purchasing intent and trigger automated campaigns.
                       </p>
-                      <ul className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-semibold text-accent-gold-500 tracking-wide">
+                      <ul className="flex flex-wrap gap-x-6 gap-y-2 text-xs font-semibold text-accent-blue-500 tracking-wide">
                         <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-silver-400"></span> Conversion tracking</li>
                         <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-silver-400"></span> Revenue analytics</li>
                         <li className="flex items-center gap-2"><span className="w-1.5 h-1.5 rounded-full bg-accent-silver-400"></span> AI-powered insights</li>
@@ -376,7 +376,7 @@
                       onClick={() => setActiveMetricTab("revenue")}
                       className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
                         activeMetricTab === "revenue" 
-                          ? "bg-accent-gold-500/10 text-accent-gold-400 border border-accent-gold-500/20 shadow-glow-gold" 
+                          ? "bg-accent-blue-500/10 text-accent-blue-400 border border-accent-blue-500/20 shadow-glow-blue" 
                           : "text-zinc-400 hover:text-white"
                       }`}
                     >
@@ -396,7 +396,7 @@
                       onClick={() => setActiveMetricTab("conversion")}
                       className={`px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all ${
                         activeMetricTab === "conversion" 
-                          ? "bg-accent-gold-500/10 text-accent-gold-400 border border-accent-gold-500/20 shadow-glow-gold" 
+                          ? "bg-accent-blue-500/10 text-accent-blue-400 border border-accent-blue-500/20 shadow-glow-blue" 
                           : "text-zinc-400 hover:text-white"
                       }`}
                     >
@@ -435,8 +435,8 @@
                           <svg className="w-full h-full" viewBox="0 0 500 150">
                             <defs>
                               <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="0%" stopColor="var(--accent-gold-500, #c5a059)" stopOpacity="0.3"></stop>
-                                <stop offset="100%" stopColor="var(--accent-gold-500, #c5a059)" stopOpacity="0.0"></stop>
+                                <stop offset="0%" stopColor="var(--accent-blue-500, #4277df)" stopOpacity="0.3"></stop>
+                                <stop offset="100%" stopColor="var(--accent-blue-500, #4277df)" stopOpacity="0.0"></stop>
                               </linearGradient>
                             </defs>
                             <path
@@ -446,7 +446,7 @@
                             <path
                               d="M0 120 C 50 110, 100 130, 150 90 C 200 80, 250 110, 300 60 C 350 40, 400 70, 500 20"
                               fill="none"
-                              stroke="#c5a059"
+                              stroke="#4277df"
                               strokeWidth="3.5"
                               strokeLinecap="round"
                               style={{
@@ -519,7 +519,7 @@
                               step="0.05"
                               value={conversionVal}
                               onChange={(e) => setConversionVal(parseFloat(e.target.value))}
-                              className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-accent-gold-500" 
+                              className="w-full h-1.5 bg-zinc-800 rounded-lg appearance-none cursor-pointer accent-accent-blue-500" 
                             />
                             <div className="flex justify-between text-[9px] font-bold text-zinc-500 uppercase mt-1">
                               <span>1.0% (DEFAULT)</span>
@@ -536,14 +536,14 @@
                               cx="72" 
                               cy="72" 
                               r="54" 
-                              stroke="#c5a059" 
+                              stroke="#4277df" 
                               strokeWidth="8" 
                               fill="transparent" 
                               strokeDasharray="339.29"
                               strokeDashoffset={339.29 - (339.29 * (conversionVal / 10))}
                               strokeLinecap="round"
                               style={{ transition: 'stroke-dashoffset 0.3s ease' }}
-                              className="filter drop-shadow-[0_0_8px_rgba(197,160,89,0.3)]"
+                              className="filter drop-shadow-[0_0_8px_rgba(66,119,223,0.3)]"
                             />
                           </svg>
                           <div className="absolute flex flex-col items-center">
@@ -566,13 +566,13 @@
                                 onMouseEnter={() => setGrowthStatIndex(idx)}
                                 className={`p-2.5 rounded-lg border cursor-pointer transition-all ${
                                   growthStatIndex === idx 
-                                    ? "bg-accent-gold-500/10 border-accent-gold-500/30 text-white" 
+                                    ? "bg-accent-blue-500/10 border-accent-blue-500/30 text-white" 
                                     : "bg-transparent border-transparent text-zinc-400 hover:text-white"
                                 }`}
                               >
                                 <div className="flex justify-between items-center">
                                   <span className="text-xs font-bold uppercase tracking-wider">{loc.city}</span>
-                                  <span className="text-xs font-semibold text-accent-gold-400">{loc.sales}</span>
+                                  <span className="text-xs font-semibold text-accent-blue-400">{loc.sales}</span>
                                 </div>
                                 {growthStatIndex === idx && (
                                   <span className="text-[10px] text-zinc-400 mt-1 block font-light">YoY Growth Index: {loc.growth}</span>
@@ -595,16 +595,16 @@
                               style={{ left: loc.x, top: loc.y }}
                             >
                               <span className={`absolute -inset-2.5 rounded-full animate-ping opacity-60 ${
-                                growthStatIndex === idx ? "bg-accent-gold-500" : "bg-accent-silver-400"
+                                growthStatIndex === idx ? "bg-accent-blue-500" : "bg-accent-silver-400"
                               }`} style={{ animationDuration: '3s' }}></span>
                               <span className={`w-3.5 h-3.5 rounded-full border border-obsidian-950 shadow-md block ${
-                                growthStatIndex === idx ? "bg-accent-gold-500" : "bg-accent-silver-400"
+                                growthStatIndex === idx ? "bg-accent-blue-500" : "bg-accent-silver-400"
                               }`}></span>
                               
                               {/* Hover Card */}
                               {growthStatIndex === idx && (
-                                <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-zinc-950 border border-accent-gold-500/30 px-3 py-1.5 rounded-lg text-center shadow-2xl z-20 whitespace-nowrap">
-                                  <span className="text-[9px] font-extrabold text-accent-gold-400 block tracking-widest">{loc.city}</span>
+                                <div className="absolute bottom-5 left-1/2 transform -translate-x-1/2 bg-zinc-950 border border-accent-blue-500/30 px-3 py-1.5 rounded-lg text-center shadow-2xl z-20 whitespace-nowrap">
+                                  <span className="text-[9px] font-extrabold text-accent-blue-400 block tracking-widest">{loc.city}</span>
                                   <span className="text-xs font-bold text-white block">{loc.sales} ({loc.growth})</span>
                                 </div>
                               )}
@@ -628,8 +628,8 @@
             
             {/* Section Header */}
             <div className="mb-20 text-center max-w-3xl mx-auto">
-              <span className="text-accent-gold-500 font-display font-semibold uppercase tracking-widest text-sm inline-flex items-center gap-2 mb-3">
-                <span className="w-4 h-px bg-accent-gold-500"></span> Consolidated Storefront Strategy
+              <span className="text-accent-blue-500 font-display font-semibold uppercase tracking-widest text-sm inline-flex items-center gap-2 mb-3">
+                <span className="w-4 h-px bg-accent-blue-500"></span> Consolidated Storefront Strategy
               </span>
               <h2 className="font-display font-black text-4xl md:text-6xl text-white uppercase tracking-tight mb-6">
                 Beyond The Platform
@@ -643,11 +643,11 @@
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               
               {/* Card 1: Marketing */}
-              <GlowCard gradientColor="rgba(197, 160, 89, 0.15)" className="p-8 group hover:-translate-y-2 transition-transform duration-300">
-                <div className="w-12 h-12 rounded-xl bg-accent-gold-500/10 border border-accent-gold-500/20 text-accent-gold-500 flex items-center justify-content-center mb-6 group-hover:scale-110 transition-transform duration-300">
+              <GlowCard gradientColor="rgba(66, 119, 223, 0.15)" className="p-8 group hover:-translate-y-2 transition-transform duration-300">
+                <div className="w-12 h-12 rounded-xl bg-accent-blue-500/10 border border-accent-blue-500/20 text-accent-blue-500 flex items-center justify-content-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   <i data-lucide="megaphone" className="w-6 h-6 m-auto"></i>
                 </div>
-                <h3 className="font-display font-bold text-2xl text-white mb-3 group-hover:text-accent-gold-400 transition-colors">Marketing</h3>
+                <h3 className="font-display font-bold text-2xl text-white mb-3 group-hover:text-accent-blue-400 transition-colors">Marketing</h3>
                 <p className="text-zinc-400 text-sm font-light leading-relaxed mb-6">
                   Design precise, conversion-optimized multi-stage campaigns. Target localized audiences with bespoke branding copy and custom promo assets seamlessly.
                 </p>
@@ -659,8 +659,8 @@
                   <div className="flex gap-1.5 items-end">
                     <span className="w-2 h-8 bg-zinc-800 rounded-sm"></span>
                     <span className="w-2 h-12 bg-zinc-800 rounded-sm"></span>
-                    <span className="w-2 h-16 bg-accent-gold-500/30 rounded-sm"></span>
-                    <span className="w-2 h-20 bg-accent-gold-500 rounded-sm shadow-glow-gold"></span>
+                    <span className="w-2 h-16 bg-accent-blue-500/30 rounded-sm"></span>
+                    <span className="w-2 h-20 bg-accent-blue-500 rounded-sm shadow-glow-blue"></span>
                   </div>
                 </div>
               </GlowCard>
@@ -687,18 +687,18 @@
               </GlowCard>
 
               {/* Card 3: CRM Integration */}
-              <GlowCard gradientColor="rgba(197, 160, 89, 0.15)" className="p-8 group hover:-translate-y-2 transition-transform duration-300">
-                <div className="w-12 h-12 rounded-xl bg-accent-gold-500/10 border border-accent-gold-500/20 text-accent-gold-500 flex items-center justify-content-center mb-6 group-hover:scale-110 transition-transform duration-300">
+              <GlowCard gradientColor="rgba(66, 119, 223, 0.15)" className="p-8 group hover:-translate-y-2 transition-transform duration-300">
+                <div className="w-12 h-12 rounded-xl bg-accent-blue-500/10 border border-accent-blue-500/20 text-accent-blue-500 flex items-center justify-content-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   <i data-lucide="database" className="w-6 h-6 m-auto"></i>
                 </div>
-                <h3 className="font-display font-bold text-2xl text-white mb-3 group-hover:text-accent-gold-400 transition-colors">CRM Integration</h3>
+                <h3 className="font-display font-bold text-2xl text-white mb-3 group-hover:text-accent-blue-400 transition-colors">CRM Integration</h3>
                 <p className="text-zinc-400 text-sm font-light leading-relaxed mb-6">
                   Consolidate buyers metrics inside customer profiles. Track purchase histories, order values, and client parameters instantly.
                 </p>
                 <div className="h-24 rounded-xl bg-zinc-950/60 border border-zinc-800/40 p-4 flex flex-col justify-center">
                   <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest block">INTEGRATED USER PROFILES</span>
                   <div className="flex gap-1.5 mt-2 overflow-hidden">
-                    <span className="w-6 h-6 rounded-full bg-accent-gold-500/20 border border-accent-gold-500 text-[10px] font-bold flex items-center justify-center text-white">IB</span>
+                    <span className="w-6 h-6 rounded-full bg-accent-blue-500/20 border border-accent-blue-500 text-[10px] font-bold flex items-center justify-center text-white">IB</span>
                     <span className="w-6 h-6 rounded-full bg-accent-silver-400/20 border border-accent-silver-400 text-[10px] font-bold flex items-center justify-center text-white">EA</span>
                     <span className="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-500 text-[10px] font-bold flex items-center justify-center text-white">KM</span>
                     <span className="w-6 h-6 rounded-full bg-zinc-800 text-[9px] font-bold flex items-center justify-center text-zinc-400">+12K</span>
@@ -725,23 +725,23 @@
               </GlowCard>
 
               {/* Card 5: Logistics & Dispatch */}
-              <GlowCard gradientColor="rgba(197, 160, 89, 0.15)" className="p-8 group hover:-translate-y-2 transition-transform duration-300 md:col-span-2 lg:col-span-2">
-                <div className="w-12 h-12 rounded-xl bg-accent-gold-500/10 border border-accent-gold-500/20 text-accent-gold-500 flex items-center justify-content-center mb-6 group-hover:scale-110 transition-transform duration-300">
+              <GlowCard gradientColor="rgba(66, 119, 223, 0.15)" className="p-8 group hover:-translate-y-2 transition-transform duration-300 md:col-span-2 lg:col-span-2">
+                <div className="w-12 h-12 rounded-xl bg-accent-blue-500/10 border border-accent-blue-500/20 text-accent-blue-500 flex items-center justify-content-center mb-6 group-hover:scale-110 transition-transform duration-300">
                   <i data-lucide="truck" className="w-6 h-6 m-auto"></i>
                 </div>
-                <h3 className="font-display font-bold text-2xl text-white mb-3 group-hover:text-accent-gold-400 transition-colors">Logistics</h3>
+                <h3 className="font-display font-bold text-2xl text-white mb-3 group-hover:text-accent-blue-400 transition-colors">Logistics</h3>
                 <p className="text-zinc-400 text-sm font-light leading-relaxed mb-6">
                   Leverage elite regional transit networks. Express home delivery across Accra & Tema within hours, combined with encrypted Paystack checkouts.
                 </p>
                 <div className="h-24 rounded-xl bg-zinc-950/60 border border-zinc-800/40 p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                   <div className="flex gap-4 items-center">
-                    <i data-lucide="map-pin" className="w-8 h-8 text-accent-gold-500 stroke-[1.5]"></i>
+                    <i data-lucide="map-pin" className="w-8 h-8 text-accent-blue-500 stroke-[1.5]"></i>
                     <div>
                       <span className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest block">DISPATCH ROUTE LOCATION</span>
                       <span className="font-display font-bold text-xs text-white block">Accra Center Warehouse -> Tema Harbour</span>
                     </div>
                   </div>
-                  <span className="px-3.5 py-1.5 bg-accent-gold-500/10 border border-accent-gold-500/20 text-accent-gold-400 text-[10px] font-bold uppercase tracking-wider rounded-full shadow-glow-gold">
+                  <span className="px-3.5 py-1.5 bg-accent-blue-500/10 border border-accent-blue-500/20 text-accent-blue-400 text-[10px] font-bold uppercase tracking-wider rounded-full shadow-glow-blue">
                     EXPRESS DISPATCH APPROVED
                   </span>
                 </div>
@@ -754,10 +754,10 @@
           {/* PLATFORM FOOTER BRANDING */}
           <footer className="max-w-7xl mx-auto px-6 pt-16 border-t border-zinc-800/40 text-center relative z-10">
             <div className="flex justify-center items-center gap-3 mb-6">
-              <img src="../assets/logo.png" alt="Logo" class="w-10 h-10 object-contain filter drop-shadow(0_2px_8px_rgba(197,160,89,0.3))" />
+              <img src="../assets/logo.png" alt="Logo" class="w-10 h-10 object-contain filter drop-shadow(0_2px_8px_rgba(66,119,223,0.3))" />
               <span className="font-display font-black text-2xl tracking-wider">
                 <span className="text-accent-silver-400">GADGET</span>
-                <span className="text-accent-gold-500">BO$$</span>
+                <span className="text-accent-blue-500">BO$$</span>
               </span>
             </div>
             <p className="text-xs text-zinc-500 uppercase tracking-widest font-semibold">

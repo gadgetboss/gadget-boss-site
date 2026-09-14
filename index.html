@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>GADGETBO$$ | The Ultimate Premium Tech Vault</title>
+  <title>gadgetboss shop</title>
   <meta name="description" content="Enter the GADGETBO$$ vault. Ghana's premier outlet for authentic gadgets, custom gaming setups, and ultra-high-end tech with instant nationwide delivery.">
   
   <!-- Styling Design System -->
@@ -29,7 +29,7 @@
           <img src="assets/logo.png" alt="GADGETBO$$ Logo" class="logo-img">
           <span class="vault-brand-copy">
             <span class="logo-text"><span class="logo-gadget">Gadget</span><span class="logo-boss">BO$$</span></span>
-            <span class="vault-brand-subtitle">The Tech Vault</span>
+            <span class="vault-brand-subtitle">Boss your tech</span>
           </span>
         </a>
         
@@ -73,7 +73,7 @@
             <option value="controllers">Controllers</option>
             <option value="videography">Videography</option>
           </select>
-          <input type="text" placeholder="Search GadgetBO$$ products..." class="header-search-input" id="search-bar-input">
+          <input type="text" placeholder="search gadget" class="header-search-input" id="search-bar-input">
           <button class="header-search-btn" id="header-search-trigger">
             <i data-lucide="search" style="width: 16px; height: 16px;"></i>
           </button>
@@ -105,7 +105,7 @@
     <section class="collection-banners">
       <div class="banners-container">
         <!-- Banner 1: PlayStation -->
-        <a href="#catalog" class="banner-card gold-angled" data-category="playstation">
+        <a href="#catalog" class="banner-card blue-angled" data-category="playstation">
           <div class="banner-text">
             <h3 class="banner-title">PlayStation<br>Collection</h3>
             <span class="banner-link">Gain Access <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i></span>
@@ -127,7 +127,7 @@
         </a>
 
         <!-- Banner 3: Controllers -->
-        <a href="#catalog" class="banner-card gold-angled controllers-card" data-category="controllers">
+        <a href="#catalog" class="banner-card blue-angled controllers-card" data-category="controllers">
           <div class="banner-text">
             <h3 class="banner-title">Controllers<br>Collection</h3>
             <span class="banner-link">Gain Access <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i></span>
@@ -281,17 +281,22 @@
           <span class="logo-text"><span class="logo-gadget">Gadget</span><span class="logo-boss">BO$$</span></span>
         </a>
         <p class="footer-desc">
-          Cultivating a world of luxury hardware, authentic audio, custom consoles, and elite digital craftsmanship since 2026. Accra, Ghana.
+          Cultivating a world of luxury hardware, authentic audio, custom consoles, and elite digital craftsmanship since 2026.
+        </p>
+        <p class="footer-desc" style="margin-top: 12px;">
+          <a href="mailto:gadgetboss80@gmail.com" style="color: var(--accent-blue);">gadgetboss80@gmail.com</a><br>
+          <a href="https://wa.me/233540639091" style="color: var(--accent-blue);">+233 54 063 9091</a><br>
+          Tudu, beside Tobinco Pharmacy
         </p>
         <div class="social-links">
           <a href="https://wa.me/233540639091" target="_blank" rel="noreferrer" class="btn-icon" aria-label="Chat with GADGETBO$$ on WhatsApp">
             <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
           </a>
+          <a href="mailto:gadgetboss80@gmail.com" class="btn-icon" aria-label="Email GadgetBoss">
+            <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
+          </a>
           <a href="#catalog" class="btn-icon" aria-label="Browse the product catalog">
             <i data-lucide="package" style="width: 18px; height: 18px;"></i>
-          </a>
-          <a href="#reviews" class="btn-icon" aria-label="Jump to customer reviews">
-            <i data-lucide="star" style="width: 18px; height: 18px;"></i>
           </a>
         </div>
       </div>
@@ -302,6 +307,8 @@
           <li class="footer-link-item"><a href="#home">Home Base</a></li>
           <li class="footer-link-item"><a href="#catalog">Vault Drops</a></li>
           <li class="footer-link-item"><a href="#reviews">Elite Reviews</a></li>
+          <li class="footer-link-item"><a href="legal/faq.html">FAQ</a></li>
+          <li class="footer-link-item"><a href="legal/contact.html">Contact</a></li>
         </ul>
       </div>
 
@@ -310,7 +317,8 @@
         <ul class="footer-links">
           <li class="footer-link-item"><a href="legal/terms.html">Terms of Access</a></li>
           <li class="footer-link-item"><a href="legal/privacy.html">Privacy Security</a></li>
-          <li class="footer-link-item"><a href="legal/shipping.html">Dispatch Policies</a></li>
+          <li class="footer-link-item"><a href="legal/shipping.html">Delivery</a></li>
+          <li class="footer-link-item"><a href="legal/refund.html">Refund Policy</a></li>
           <li class="footer-link-item"><a href="legal/warranty.html">Warranty Details</a></li>
         </ul>
       </div>
@@ -398,6 +406,11 @@
           <label class="modal-label" for="cust-phone">WhatsApp Number</label>
           <input type="tel" id="cust-phone" class="modal-input" required placeholder="e.g. 0541234567">
         </div>
+
+        <div class="modal-form-group">
+          <label class="modal-label" for="cust-location">Delivery Location</label>
+          <input type="text" id="cust-location" class="modal-input" required placeholder="e.g. East Legon, Accra">
+        </div>
         
         <div class="modal-form-group" id="momo-fields-container">
           <label class="modal-label" for="cust-momo-provider">Mobile Money Network</label>
@@ -411,16 +424,12 @@
         
         <div class="payment-summary">
           <div class="summary-row">
-            <span>Tech Hardware Items</span>
+            <span>Items</span>
             <span id="summary-items-count">0 items</span>
           </div>
           <div class="summary-row">
-            <span>Insured Vault Shipping</span>
-            <span style="color: var(--accent-emerald); font-weight: 600;">FREE</span>
-          </div>
-          <div class="summary-row">
-            <span>Payable Amount</span>
-            <span id="summary-total-price" style="color: var(--accent-gold);">GHS 0.00</span>
+            <span>Total</span>
+            <span id="summary-total-price" style="color: var(--accent-blue);">GHS 0.00</span>
           </div>
         </div>
         
@@ -479,6 +488,14 @@
   </div>
 
   <!-- JavaScript App Logic -->
+  <script>
+    window.__GADGETBOSS_ENV__ = window.__GADGETBOSS_ENV__ || {
+      SUPABASE_URL: '',
+      SUPABASE_ANON_KEY: ''
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+  <script src="dist/gadgetboss-sync.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

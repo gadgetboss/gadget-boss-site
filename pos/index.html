@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GadgetBoss POS</title>
+  <link rel="icon" href="../assets/logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            navy: { DEFAULT: '#0b1220', soft: '#111827', muted: '#1a2332' },
+            accent: { DEFAULT: '#4277df', soft: '#5b8eef', dim: '#345fb8' },
+          },
+          fontFamily: {
+            outfit: ['Outfit', 'sans-serif'],
+            jakarta: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          boxShadow: {
+            card: '0 4px 24px rgba(15, 23, 42, 0.06)',
+            soft: '0 2px 12px rgba(15, 23, 42, 0.04)',
+          },
+          borderRadius: {
+            card: '14px',
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      --navy: #0b1220;
+      --navy-soft: #111827;
+      --accent: #4277df;
+    }
+    * { box-sizing: border-box; }
+    html, body, #root { height: 100%; margin: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #f3f5f9;
+      color: #0f172a;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, .font-display { font-family: 'Outfit', sans-serif; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 999px; }
+    .nav-item.active { background: rgba(66, 119, 223, 0.18); color: #fff; }
+    .nav-item:hover:not(.active) { background: rgba(255,255,255,0.06); }
+    .low-stock { background: #fef3c7; }
+    .out-stock { background: #fee2e2; }
+    .modal-backdrop { background: rgba(11, 18, 32, 0.55); backdrop-filter: blur(4px); }
+    input, select, textarea { outline: none; }
+    input:focus, select:focus, textarea:focus { border-color: #4277df; box-shadow: 0 0 0 3px rgba(66,119,223,0.15); }
+    .chart-wrap { position: relative; height: 280px; }
+    @media print {
+      body * { visibility: hidden !important; }
+      #receipt-print, #receipt-print * { visibility: visible !important; }
+      #receipt-print {
+        position: absolute !important;
+        left: 0; top: 0; width: 100%;
+        background: white;
+        padding: 24px;
+      }
+      .no-print { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.6/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/lucide@0.460.0/dist/umd/lucide.min.js"></script>
+  <script>
+    // Inject Supabase public keys here or via hosting env → window.__GADGETBOSS_ENV__
+    window.__GADGETBOSS_ENV__ = window.__GADGETBOSS_ENV__ || {
+      SUPABASE_URL: '',
+      SUPABASE_ANON_KEY: ''
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+  <script src="../dist/gadgetboss-sync.js"></script>
+  <script type="text/babel" src="app.jsx"></script>
+</body>
+</html>

@@ -1,5 +1,5 @@
-// --- PRODUCT DATABASE (100% Centuryboy Hub Authenticity) ---
-const PRODUCTS = [
+// --- PRODUCT DATABASE (seed / offline fallback; replaced by Supabase when configured) ---
+let PRODUCTS = [
   {
     id: "airpods-pro-3",
     title: "AirPods Pro 3rd Gen",
@@ -11,7 +11,7 @@ const PRODUCTS = [
     rating: 5.0,
     reviewsCount: 128,
     badge: "IOS 26 VERIFIED",
-    tagline: "H2 Apple Silicon, Custom Driver, 30h MagSafe",
+    tagline: "H2 Apple Silicon, Active Noise Cancellation, 30h MagSafe",
     specs: { driver: "Custom High-Excursion", battery: "6hrs (30hrs w/ Case)", chip: "H2 Apple Silicon", charging: "MagSafe / USB-C", sensors: "Skin-detect / Motion" }
   },
   {
@@ -359,7 +359,7 @@ const newsletterForm = document.getElementById("newsletter-subscription-form");
 let activeProductDetail = null;
 
 // --- APP INITIALIZATION ---
-function init() {
+async function init() {
   // Load Theme
   const savedTheme = localStorage.getItem("gadgetboss-theme") || "dark";
   if (savedTheme === "light") {
@@ -389,13 +389,84 @@ function init() {
   }
   wishlistBadgeCount.textContent = wishlist.length;
 
+  await hydrateCatalogueFromSupabase();
   renderCategories();
   renderProducts();
   renderCart();
   setupEventListeners();
+  subscribeLiveInventory();
   
   // Initialize Lucide Icons
   lucide.createIcons();
+}
+
+async function hydrateCatalogueFromSupabase() {
+  const Sync = window.GadgetBossSync;
+  const localById = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
+
+  // 1) Supabase shared DB (when configured)
+  if (Sync && Sync.isSyncConfigured()) {
+    try {
+      const remote = await Sync.fetchWebsiteProducts();
+      if (remote.length) {
+        PRODUCTS = remote.map((r) => {
+          const local = localById[r.id] || {};
+          return {
+            ...local,
+            ...r,
+            rating: local.rating || r.rating || 4.8,
+            reviewsCount: local.reviewsCount || r.reviewsCount || 0,
+            specs: Object.keys(r.specs || {}).length ? r.specs : (local.specs || {}),
+          };
+        });
+        return;
+      }
+    } catch (err) {
+      console.warn('[storefront] Supabase catalogue hydrate failed', err);
+    }
+  }
+
+  // 2) POS-published catalogue (same browser / origin) — works without Supabase
+  if (Sync && Sync.loadPublishedCatalogue) {
+    const published = Sync.loadPublishedCatalogue().filter((p) => p.websiteVisible !== false);
+    if (published.length) {
+      PRODUCTS = published.map((r) => {
+        const local = localById[r.id] || {};
+        return {
+          ...local,
+          ...r,
+          rating: local.rating || r.rating || 4.8,
+          reviewsCount: local.reviewsCount || 0,
+          specs: local.specs || r.specs || {},
+        };
+      });
+    }
+  }
+}
+
+function subscribeLiveInventory() {
+  const Sync = window.GadgetBossSync;
+  if (!Sync) return;
+
+  const refresh = async () => {
+    await hydrateCatalogueFromSupabase();
+    cart = cart.map((item) => {
+      const live = PRODUCTS.find((p) => p.id === item.product.id);
+      return live ? { ...item, product: live } : item;
+    }).filter((item) => item.product && !(item.product.outOfStock && item.product.price > 0));
+    saveCart();
+    renderProducts();
+    renderCart();
+    lucide.createIcons();
+  };
+
+  if (Sync.isSyncConfigured()) {
+    Sync.subscribeProducts(refresh);
+    Sync.subscribeInventoryMovements(refresh);
+  }
+  if (Sync.subscribeCatalogue) {
+    Sync.subscribeCatalogue(refresh);
+  }
 }
 
 function setActiveCategory(category) {
@@ -636,7 +707,7 @@ function renderProducts() {
     }
     productsGrid.innerHTML = `
       <div class="no-results">
-        <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: var(--accent-gold); margin-bottom: 16px;"></i>
+        <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: var(--accent-blue); margin-bottom: 16px;"></i>
         <p>No high-end tech matching your parameters inside the vault.</p>
         <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">Try refining your query or resetting filter tabs.</p>
       </div>
@@ -695,10 +766,13 @@ function renderProducts() {
 
     // Localized formatting (Ghana GHS)
     let priceFormatted = "";
+    const isOutOfStock = !!(prod.outOfStock || (typeof prod.stock === 'number' && prod.stock <= 0 && prod.price > 0));
     let isContactOnly = prod.price === 0;
 
     if (isContactOnly) {
       priceFormatted = "Price on Request";
+    } else if (isOutOfStock) {
+      priceFormatted = new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', minimumFractionDigits: 0 }).format(prod.price);
     } else {
       priceFormatted = new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', minimumFractionDigits: 0 }).format(prod.price);
     }
@@ -706,7 +780,7 @@ function renderProducts() {
     return `
       <div class="product-card vault-thumb-card" data-id="${prod.id}" role="button" tabindex="0" aria-label="Open details for ${prod.title}">
         <div class="prod-img-container vault-thumb-image">
-          <span class="${badgeClass}">${badgeLabel}</span>
+          <span class="${badgeClass}">${isOutOfStock ? 'OUT OF STOCK' : badgeLabel}</span>
           <button class="card-wishlist-pin ${wishlist.includes(prod.id) ? 'pinned' : ''}" data-id="${prod.id}" aria-label="Pin to Wishlist">
             <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${wishlist.includes(prod.id) ? 'currentColor' : 'none'};"></i>
           </button>
@@ -723,10 +797,14 @@ function renderProducts() {
           </div>
           
           ${isContactOnly ? `
-            <a href="https://wa.me/${WHATSAPP_PHONE}?text=Hi%20Centuryboy!%20I'm%20interested%20in%20the%20${encodeURIComponent(prod.title)}.%20Please%20let%20me%20know%20the%20current%20price%20and%20availability!" target="_blank" class="btn-add-cart inquire-whatsapp-btn" style="color: var(--accent-gold); border-color: rgba(var(--accent-gold-rgb), 0.3); text-decoration: none; display: flex; align-items: center; gap: 8px;">
+            <a href="https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(`Hi GADGETBO$$, I'm interested in the ${prod.title}. Is it available, and what is the price?`)}" target="_blank" class="btn-add-cart inquire-whatsapp-btn" style="color: var(--accent-blue); border-color: rgba(var(--accent-blue-rgb), 0.3); text-decoration: none; display: flex; align-items: center; gap: 8px;">
               <i data-lucide="message-square" style="width: 16px; height: 16px;"></i>
               <span>INQUIRE NOW</span>
             </a>
+          ` : isOutOfStock ? `
+            <button class="btn-add-cart" disabled aria-disabled="true" style="opacity: 0.55; cursor: not-allowed;">
+              <span>OUT OF STOCK</span>
+            </button>
           ` : `
             <button class="btn-add-cart add-to-cart-btn" data-id="${prod.id}">
               <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
@@ -806,8 +884,19 @@ function renderProducts() {
 function addToCart(productId) {
   const product = PRODUCTS.find(p => p.id === productId);
   if (!product) return;
+  if (product.price <= 0) return;
+  if (product.outOfStock || (typeof product.stock === 'number' && product.stock <= 0)) {
+    alert('This item is currently out of stock.');
+    return;
+  }
 
   const existing = cart.find(item => item.product.id === productId);
+  const nextQty = (existing ? existing.quantity : 0) + 1;
+  if (typeof product.stock === 'number' && nextQty > product.stock) {
+    alert(`Only ${product.stock} left in stock.`);
+    return;
+  }
+
   if (existing) {
     existing.quantity += 1;
   } else {
@@ -1089,38 +1178,94 @@ function closeCheckoutModal() {
 }
 
 // --- SUBMIT CHECKOUT FORM LOGIC ---
-function handleCheckoutSubmit(e) {
+async function handleCheckoutSubmit(e) {
   e.preventDefault();
   
   // Extract values
   const name = document.getElementById("cust-name").value.trim();
   const email = document.getElementById("cust-email").value.trim();
   const phone = document.getElementById("cust-phone").value.trim();
+  const location = document.getElementById("cust-location").value.trim();
   const totalPrice = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   const totalPriceFormatted = new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', minimumFractionDigits: 0 }).format(totalPrice);
+
+  if (!cart.length) {
+    alert('Your cart is empty.');
+    return;
+  }
 
   closeCheckoutModal();
 
   if (currentCheckoutType === "whatsapp") {
-    // Compile WhatsApp message string
-    let messageText = `🔥 *GADGETBO$$ ORDER* 🔥\n`;
-    messageText += `=========================\n\n`;
-    messageText += `👤 *Client Name:* ${name}\n`;
-    messageText += `✉️ *Client Email:* ${email}\n`;
-    messageText += `📞 *WhatsApp Contact:* ${phone}\n\n`;
-    messageText += `📦 *HARDWARE CART BASKET:*\n`;
-    
-    cart.forEach((item, idx) => {
-      const itemPrice = new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', minimumFractionDigits: 0 }).format(item.product.price * item.quantity);
-      messageText += `${idx + 1}. *${item.product.title}* x ${item.quantity} (${itemPrice})\n`;
-    });
-    
-    messageText += `\n=========================\n`;
-    messageText += `💰 *TOTAL PAYABLE:* ${totalPriceFormatted}\n`;
-    messageText += `🚚 *SHIPPING:* Insured Express Delivery (Free)\n\n`;
-    messageText += `Please verify my hardware drop and send the processing credentials! 🚀`;
+    const Sync = window.GadgetBossSync;
+    let receiptNo = '';
+    const cartSnapshot = cart.map((item) => ({
+      product: { id: item.product.id, title: item.product.title, price: item.product.price },
+      quantity: item.quantity,
+    }));
+    localStorage.setItem('gadgetboss-last-checkout', JSON.stringify(cartSnapshot));
 
-    // Encode text query
+    // Record ONLINE order + deduct stock atomically when Supabase is configured
+    if (Sync && Sync.isSyncConfigured()) {
+      try {
+        const idempotencyKey = `online-${(crypto.randomUUID && crypto.randomUUID()) || Date.now()}-${phone}`;
+        const result = await Sync.completeOrder({
+          idempotencyKey,
+          source: 'ONLINE',
+          status: 'PENDING',
+          paymentMethod: 'MoMo',
+          customerName: name,
+          customerPhone: phone,
+          customerEmail: email,
+          customerLocation: location,
+          items: cart.map((item) => ({
+            productId: item.product.id,
+            qty: item.quantity,
+            unitPrice: item.product.price,
+            costPrice: item.product.costPrice || 0,
+          })),
+        });
+        if (!result.ok) {
+          const detail = (result.products || []).map((p) => `${p.name || p.product_id}: need ${p.requested}, have ${p.available}`).join('\n');
+          alert(result.error === 'INSUFFICIENT_STOCK'
+            ? `Some items are no longer available:\n${detail}`
+            : (result.error || 'Could not place order'));
+          await hydrateCatalogueFromSupabase();
+          renderProducts();
+          return;
+        }
+        receiptNo = result.receipt_no || '';
+        cart = [];
+        saveCart();
+        renderCart();
+        await hydrateCatalogueFromSupabase();
+        renderProducts();
+      } catch (err) {
+        console.error(err);
+        alert('Could not reserve stock for this order. Please try again.\n' + (err.message || err));
+        return;
+      }
+    }
+
+    let messageText = `Hi GADGETBO$$,\n\n`;
+    messageText += `I would like to place an order.\n\n`;
+    if (receiptNo) messageText += `Order ref: ${receiptNo}\n`;
+    messageText += `Name: ${name}\n`;
+    messageText += `Phone: ${phone}\n`;
+    if (email) messageText += `Email: ${email}\n`;
+    messageText += `Location: ${location}\n`;
+    messageText += `\nItems:\n`;
+
+    cartSnapshot.forEach((item, idx) => {
+      const itemPrice = new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', minimumFractionDigits: 0 }).format(item.product.price * item.quantity);
+      messageText += `${idx + 1}. ${item.product.title} x ${item.quantity} — ${itemPrice}\n`;
+    });
+
+    messageText += `\nTotal: ${totalPriceFormatted}\n\n`;
+    messageText += receiptNo
+      ? `Stock has been reserved. Please confirm payment details. Thank you.`
+      : `Please confirm availability and how I should pay. Thank you.`;
+
     const encodedText = encodeURIComponent(messageText);
     const whatsappUrl = `https://wa.me/${WHATSAPP_PHONE}?text=${encodedText}`;
 

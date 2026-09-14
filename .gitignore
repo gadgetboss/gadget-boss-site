@@ -1,5 +1,8 @@
-.DS_Store
-crm.db
-__pycache__/
-*.py[cod]
+node_modules/
+dist-types/
 .env
+.env.local
+.DS_Store
+*.log
+crm.db
+crm.db-journal
