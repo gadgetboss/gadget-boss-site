@@ -3776,6 +3776,793 @@ a,
   }
 }
 
+/* --- CUSTOMER VERIFICATION & ACCOUNT PANEL --- */
+
+/* Several panels below are flex/inline-flex and get toggled with the `hidden`
+   attribute, which an author `display` rule would otherwise beat. */
+[hidden] {
+  display: none !important;
+}
+
+/* The two header entry points collapse into one tap target on phones */
+.account-action-compact {
+  display: none;
+}
+
+.modal-label:has(.modal-verified-badge) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.modal-verified-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(var(--accent-emerald-rgb), 0.1);
+  border: 1px solid rgba(var(--accent-emerald-rgb), 0.32);
+  color: var(--accent-emerald);
+  font-size: 0.66rem;
+  letter-spacing: 0.06em;
+}
+
+.modal-verified-badge i {
+  width: 13px;
+  height: 13px;
+}
+
+.modal-input.is-verified {
+  color: var(--text-secondary);
+  border-color: rgba(var(--accent-emerald-rgb), 0.28);
+  cursor: default;
+}
+
+body.light-mode .modal-verified-badge {
+  background: rgba(5, 150, 105, 0.1);
+  border-color: rgba(5, 150, 105, 0.3);
+  color: #047857;
+}
+
+body.light-mode .modal-input.is-verified {
+  border-color: rgba(5, 150, 105, 0.28);
+}
+
+/* Verification modal — reuses .modal-overlay / .checkout-modal shell */
+.verify-modal-overlay {
+  z-index: 20050;
+}
+
+.verify-modal {
+  width: 440px;
+}
+
+.verify-intro {
+  font-size: 0.88rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  margin-bottom: 22px;
+}
+
+.verify-phone-field {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.verify-phone-prefix {
+  display: flex;
+  align-items: center;
+  padding: 0 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: rgba(var(--accent-blue-rgb), 0.08);
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 0.95rem;
+  flex-shrink: 0;
+}
+
+.verify-phone-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  letter-spacing: 0.06em;
+}
+
+.verify-hint {
+  margin-top: 8px;
+  font-size: 0.76rem;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+
+.verify-sent-to {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-bottom: 22px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+}
+
+.verify-sent-to strong {
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  letter-spacing: 0.04em;
+}
+
+.verify-edit-link {
+  background: none;
+  border: none;
+  padding: 4px 0;
+  color: var(--accent-blue);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.verify-edit-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.verify-otp-group {
+  display: flex;
+  gap: 10px;
+}
+
+.verify-otp-box {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 74px;
+  height: 62px;
+  text-align: center;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  font-weight: 800;
+  outline: none;
+  transition: var(--transition-fast);
+}
+
+.verify-otp-box:focus {
+  border-color: var(--accent-blue);
+  box-shadow: 0 0 0 3px rgba(var(--accent-blue-rgb), 0.16);
+}
+
+.verify-otp-box:disabled {
+  opacity: 0.55;
+}
+
+.verify-otp-group.is-invalid .verify-otp-box {
+  border-color: var(--accent-rose);
+  animation: verify-shake 0.3s ease;
+}
+
+@keyframes verify-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.verify-timer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: -6px 0 22px;
+}
+
+.verify-countdown {
+  font-size: 0.8rem;
+  /* Secondary rather than muted: the remaining time has to stay readable
+     against the light-mode card, where muted drops under 3:1. */
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.verify-countdown.is-expired {
+  color: var(--accent-rose);
+  font-weight: 600;
+}
+
+.verify-resend-btn {
+  background: none;
+  border: 1px solid var(--border-color);
+  border-radius: 999px;
+  padding: 8px 14px;
+  min-height: 36px;
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  font-variant-numeric: tabular-nums;
+}
+
+.verify-resend-btn:hover:not(:disabled) {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.verify-resend-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-modal-action.verify {
+  background: var(--accent-blue);
+  color: #ffffff;
+}
+
+.btn-modal-action.verify:hover:not(:disabled) {
+  background: var(--accent-blue-deep);
+  box-shadow: 0 8px 25px rgba(var(--accent-blue-rgb), 0.4);
+  transform: translateY(-2px);
+}
+
+.btn-modal-action:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.verify-spinner {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #ffffff;
+  animation: verify-spin 0.7s linear infinite;
+}
+
+.btn-modal-action.is-loading .verify-spinner {
+  display: block;
+}
+
+@keyframes verify-spin {
+  to { transform: rotate(360deg); }
+}
+
+.verify-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 0 10px;
+  text-align: center;
+}
+
+.verify-success-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(var(--accent-emerald-rgb), 0.12);
+  border: 1px solid rgba(var(--accent-emerald-rgb), 0.4);
+  color: var(--accent-emerald);
+}
+
+.verify-success-icon i {
+  width: 28px;
+  height: 28px;
+}
+
+.verify-success-text {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--text-primary);
+}
+
+.verify-status {
+  margin-top: 14px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  min-height: 1.1em;
+  color: var(--text-secondary);
+}
+
+.verify-status.is-error {
+  color: var(--accent-rose);
+  font-weight: 600;
+}
+
+.verify-status.is-info {
+  color: var(--accent-blue);
+}
+
+body.light-mode .verify-otp-box {
+  background: #ffffff;
+}
+
+body.light-mode .verify-success-icon {
+  background: rgba(5, 150, 105, 0.1);
+  border-color: rgba(5, 150, 105, 0.3);
+  color: #047857;
+}
+
+/* Account drawer — reuses .cart-drawer-overlay / .cart-drawer shell */
+.account-drawer-overlay {
+  z-index: 15000;
+}
+
+.account-drawer {
+  z-index: 15001;
+}
+
+.account-drawer-header {
+  gap: 12px;
+}
+
+.account-header-lead {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+
+.account-header-copy {
+  min-width: 0;
+}
+
+.account-drawer-sub {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.74rem;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+}
+
+.account-drawer-body {
+  gap: 14px;
+}
+
+.account-drawer-footer {
+  gap: 12px;
+}
+
+.account-signout-btn {
+  width: 100%;
+  justify-content: center;
+}
+
+.account-btn-solid,
+.account-btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 10px 16px;
+  border-radius: 10px;
+  font-family: var(--font-display);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.account-btn-solid {
+  background: var(--accent-blue);
+  border: 1px solid var(--accent-blue);
+  color: #ffffff;
+}
+
+.account-btn-solid:hover {
+  background: var(--accent-blue-deep);
+  border-color: var(--accent-blue-deep);
+}
+
+.account-btn-ghost {
+  background: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+}
+
+.account-btn-ghost:hover {
+  border-color: var(--accent-blue);
+  color: var(--accent-blue);
+}
+
+.account-btn-ghost i {
+  width: 15px;
+  height: 15px;
+}
+
+.account-btn-solid:disabled,
+.account-btn-ghost:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.account-order-card {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: var(--transition-fast);
+}
+
+.account-order-card:hover {
+  border-color: var(--border-hover);
+}
+
+.account-order-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.account-order-receipt {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 0.98rem;
+  letter-spacing: 0.03em;
+}
+
+.account-status-badge {
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.66rem;
+  font-family: var(--font-display);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  white-space: nowrap;
+}
+
+.account-status-badge.is-success {
+  background: rgba(var(--accent-emerald-rgb), 0.12);
+  color: var(--accent-emerald);
+  border: 1px solid rgba(var(--accent-emerald-rgb), 0.32);
+}
+
+.account-status-badge.is-info {
+  background: rgba(var(--accent-blue-rgb), 0.12);
+  color: var(--accent-blue);
+  border: 1px solid rgba(var(--accent-blue-rgb), 0.32);
+}
+
+.account-status-badge.is-warn {
+  background: rgba(255, 176, 32, 0.12);
+  color: #ffb020;
+  border: 1px solid rgba(255, 176, 32, 0.3);
+}
+
+.account-status-badge.is-danger {
+  background: rgba(255, 42, 95, 0.1);
+  color: var(--accent-rose);
+  border: 1px solid rgba(255, 42, 95, 0.3);
+}
+
+body.light-mode .account-status-badge.is-success {
+  background: rgba(5, 150, 105, 0.1);
+  color: #047857;
+  border-color: rgba(5, 150, 105, 0.3);
+}
+
+body.light-mode .account-status-badge.is-warn {
+  color: #b45309;
+}
+
+.account-order-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+}
+
+.account-meta-dot {
+  color: var(--text-muted);
+}
+
+.account-order-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border-color);
+}
+
+.account-order-total {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-size: 1.1rem;
+  color: var(--accent-blue);
+}
+
+.account-order-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.account-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.account-detail-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.account-section-title {
+  margin-top: 18px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--text-muted);
+}
+
+.account-timeline {
+  list-style: none;
+  padding: 4px 0 0 2px;
+}
+
+.account-timeline-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 16px 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 0;
+}
+
+.account-timeline-step::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 26px;
+  bottom: -12px;
+  width: 2px;
+  background: var(--border-color);
+}
+
+.account-timeline-step:last-child::before {
+  display: none;
+}
+
+.account-timeline-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  background: var(--bg-secondary);
+  position: relative;
+  z-index: 1;
+}
+
+.account-timeline-step.is-done .account-timeline-dot {
+  border-color: var(--accent-blue);
+  background: var(--accent-blue);
+  box-shadow: 0 0 10px rgba(var(--accent-blue-rgb), 0.45);
+}
+
+.account-timeline-label {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.account-timeline-step.is-done .account-timeline-label {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.account-timeline-at {
+  font-size: 0.72rem;
+  /* These small labels carry real order facts, so they stay above the muted
+     token, which falls under 3:1 on the light-mode card. */
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.account-line-items {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-top: 4px;
+}
+
+.account-line-item {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.88rem;
+}
+
+.account-line-item:last-child {
+  border-bottom: none;
+}
+
+.account-line-name {
+  color: var(--text-primary);
+}
+
+.account-line-qty {
+  margin-left: 8px;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.account-line-total {
+  font-family: var(--font-display);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.account-detail-summary {
+  margin: 18px 0;
+}
+
+.account-detail-reorder {
+  margin-bottom: 4px;
+}
+
+.account-empty {
+  margin: auto;
+  padding: 20px 4px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+.account-empty-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-color);
+  background: rgba(var(--accent-blue-rgb), 0.07);
+  color: var(--accent-blue);
+}
+
+.account-empty-icon i {
+  width: 26px;
+  height: 26px;
+}
+
+.account-empty-title {
+  font-size: 1.05rem;
+  font-weight: 800;
+}
+
+.account-empty-text {
+  font-size: 0.86rem;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  max-width: 34ch;
+}
+
+.account-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.account-skeleton-card {
+  height: 132px;
+  border-radius: 16px;
+  border: 1px solid var(--border-color);
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.02) 30%,
+    rgba(255, 255, 255, 0.07) 50%,
+    rgba(255, 255, 255, 0.02) 70%
+  );
+  background-size: 220% 100%;
+  animation: account-skeleton-sweep 1.3s ease-in-out infinite;
+}
+
+body.light-mode .account-skeleton-card {
+  background: linear-gradient(
+    100deg,
+    rgba(15, 23, 42, 0.03) 30%,
+    rgba(15, 23, 42, 0.08) 50%,
+    rgba(15, 23, 42, 0.03) 70%
+  );
+  background-size: 220% 100%;
+}
+
+body.light-mode .account-order-card {
+  background: rgba(255, 255, 255, 0.6);
+}
+
+@keyframes account-skeleton-sweep {
+  0% { background-position: 140% 0; }
+  100% { background-position: -40% 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .account-skeleton-card,
+  .verify-spinner,
+  .verify-otp-group.is-invalid .verify-otp-box {
+    animation: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .account-action-wide {
+    display: none;
+  }
+
+  .account-action-compact {
+    display: flex;
+  }
+
+  .verify-modal {
+    width: 100%;
+  }
+
+  .verify-otp-box {
+    max-width: none;
+    height: 58px;
+    font-size: 1.5rem;
+  }
+
+  .verify-phone-prefix {
+    padding: 0 12px;
+    font-size: 0.9rem;
+  }
+
+  .verify-resend-btn,
+  .verify-edit-link {
+    min-height: 44px;
+  }
+
+  .verify-modal .btn-close-modal,
+  .account-drawer .btn-close-drawer {
+    width: 44px;
+    height: 44px;
+  }
+
+  .account-order-actions {
+    width: 100%;
+  }
+
+  .account-btn-solid,
+  .account-btn-ghost {
+    min-height: 44px;
+    flex: 1 1 auto;
+  }
+}
+
 @media (max-width: 380px) {
   .logo-text {
     font-size: 1.15rem;

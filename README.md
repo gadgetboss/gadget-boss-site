@@ -24,6 +24,12 @@ Copy [`.env.example`](.env.example).
 | `SUPABASE_URL` | Browser via `window.__GADGETBOSS_ENV__` | Project URL |
 | `SUPABASE_ANON_KEY` | Browser via `window.__GADGETBOSS_ENV__` | Public anon key (RLS enforced) |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server/CI only | Migrations / admin seeds — **never** ship to browsers |
+| `PAYSTACK_PUBLIC_KEY` | Browser (via `/api/public-config` or `index.html`) | Opens Paystack inline checkout |
+| `PAYSTACK_SECRET_KEY` | Server/Vercel only | Verifies payments after checkout — **never** ship to browsers |
+| `HUBTEL_CLIENT_ID` / `HUBTEL_CLIENT_SECRET` | Server/Vercel only | Hubtel OTP API credentials — **never** ship to browsers |
+| `HUBTEL_SENDER_ID` | Server/Vercel only | SMS sender, defaults to `GADGETBOSS` |
+| `HUBTEL_OTP_BASE_URL` | Server/Vercel only | Defaults to `https://api-otp.hubtel.com` |
+| `SESSION_SECRET` | Server/Vercel only | Long random string that signs the `gb_otp` / `gb_session` cookies |
 
 Inject keys in:
 
@@ -31,6 +37,99 @@ Inject keys in:
 - [`pos/index.html`](pos/index.html) → `window.__GADGETBOSS_ENV__`
 
 When URL/key are empty, POS and website keep working offline with local seed data (no shared sync).
+
+On Vercel, set `PAYSTACK_PUBLIC_KEY` and `PAYSTACK_SECRET_KEY` in **Project → Settings → Environment Variables**. The storefront loads the public key from `GET /api/public-config` at startup, so you do not need to edit `index.html` for each deploy.
+
+---
+
+## Paystack checkout
+
+Customers can pay with **Card** or **Mobile Money** (MTN, Telecel, AirtelTigo) from the cart:
+
+1. Add items → **Pay with Paystack**
+2. Confirm phone via OTP (when Hubtel is configured)
+3. Enter delivery details and choose payment channel
+4. Paystack inline popup collects payment in GHS
+5. Server verifies the transaction at `POST /api/paystack/verify`
+6. Order is saved to Supabase as `ONLINE` / `CONFIRMED` with idempotency key `paystack-{reference}`
+
+### Paystack dashboard setup
+
+1. Create a Paystack account and enable **Ghana Cedi (GHS)**.
+2. Copy **Public Key** → `PAYSTACK_PUBLIC_KEY`
+3. Copy **Secret Key** → `PAYSTACK_SECRET_KEY` (Vercel env + local `.env` for `server.py`)
+4. Test with Paystack test keys (`pk_test_…` / `sk_test_…`) before going live.
+
+Local dev with verification:
+
+```bash
+export PAYSTACK_PUBLIC_KEY=pk_test_...
+export PAYSTACK_SECRET_KEY=sk_test_...
+python3 server.py 8090
+```
+
+---
+
+## Passwordless customer sign-in (Hubtel OTP)
+
+Customers sign in with a phone number and a one-time SMS code — no passwords, no
+customer rows in Supabase Auth.
+
+| Endpoint | Method | Purpose |
+|----------|--------|---------|
+| `/api/auth/request-otp` | POST | `{ phone }` → sends the code, sets `gb_otp` |
+| `/api/auth/verify-otp` | POST | `{ code }` → clears `gb_otp`, sets `gb_session` |
+| `/api/auth/resend-otp` | POST | resends the code (1 per 30s) |
+| `/api/auth/logout` | POST | clears both cookies |
+| `/api/auth/session` | GET | `{ authenticated, phone?, maskedPhone?, configured }` |
+| `/api/account/orders` | GET | the signed-in customer's last 50 orders |
+| `/api/account/orders/:id` | GET | one order plus a derived `tracking` timeline |
+
+**No database is used for pending OTP state.** Both cookies are HttpOnly and
+HMAC-SHA256 signed with `SESSION_SECRET` (`base64url(payload).base64url(sig)`,
+compared with `crypto.timingSafeEqual`):
+
+- `gb_otp` — `{ phone, requestId, prefix, attempts, lastSentAt, exp }`, Max-Age 10 min.
+  Hubtel's `requestId`/`prefix` stay server-only; they never appear in a response body.
+- `gb_session` — `{ phone, iat, exp }`, Max-Age 30 days.
+
+Flags on both: `HttpOnly; Path=/; SameSite=Lax; Max-Age=…`, plus `Secure` when
+`x-forwarded-proto` is `https` (omitted on plain HTTP so local dev works).
+
+Limits: 5 wrong codes per pending OTP, then `429` until a new code is requested;
+resend is capped at 1 per 30 seconds.
+
+### Graceful degradation
+
+When `HUBTEL_CLIENT_ID`, `HUBTEL_CLIENT_SECRET` or `SESSION_SECRET` is missing,
+`/api/auth/request-otp` returns **HTTP 200** with
+`{ ok: false, configured: false }`. The storefront reads `configured: false` and
+lets checkout proceed exactly as it does today, so the live store keeps working
+before the keys are set.
+
+`/api/account/*` needs `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` (service
+role, never the anon key). Without them the order list returns
+`{ ok: true, configured: false, orders: [] }`.
+
+Order lookups match `customer_phone` against every stored spelling of the
+session phone (`+233…`, `233…`, `0…`, bare 9 digits) via
+[`src/auth/phone.ts`](src/auth/phone.ts). `api/_lib/phone.js` is a CommonJS copy
+of that module — `src/` is excluded from the Vercel bundle and the serverless
+functions run with zero dependencies, so **keep the two files in sync**. The
+normaliser is unit-tested in [`tests/phone.test.ts`](tests/phone.test.ts).
+
+Fetching an order the session does not own returns the same `404 Order not
+found.` as a non-existent one, so order ids cannot be enumerated.
+
+Local dev parity lives in [`server.py`](server.py): the same routes, cookie
+names, signing scheme and JSON shapes, outside the CRM basic-auth gate.
+
+```bash
+export HUBTEL_CLIENT_ID=...
+export HUBTEL_CLIENT_SECRET=...
+export SESSION_SECRET=$(openssl rand -hex 32)
+python3 server.py 8090
+```
 
 ---
 

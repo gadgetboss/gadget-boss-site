@@ -2199,6 +2199,18 @@ function App() {
 
   useEffect(() => {
     (async () => {
+      try {
+        const res = await fetch('/api/public-config');
+        if (res.ok) {
+          const cfg = await res.json();
+          window.__GADGETBOSS_ENV__ = window.__GADGETBOSS_ENV__ || {};
+          if (cfg.SUPABASE_URL) window.__GADGETBOSS_ENV__.SUPABASE_URL = cfg.SUPABASE_URL;
+          if (cfg.SUPABASE_ANON_KEY) window.__GADGETBOSS_ENV__.SUPABASE_ANON_KEY = cfg.SUPABASE_ANON_KEY;
+        }
+      } catch (err) {
+        console.warn('[POS] public-config unavailable', err);
+      }
+
       let store = loadStore();
       if (!store || !store.products?.length) {
         store = await createInitialData();

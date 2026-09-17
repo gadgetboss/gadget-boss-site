@@ -1,17 +1,39 @@
 import os
+import re
 import sys
 import json
+import time
+import hmac
+import hashlib
 import sqlite3
 import base64
 import secrets
 import urllib.request
 import urllib.parse
+import urllib.error
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 from datetime import datetime
 import threading
 
+def _load_env_file(path):
+    """Load KEY=VALUE lines without overwriting variables already in the environment."""
+    if not os.path.isfile(path):
+        return
+    with open(path, encoding="utf-8") as handle:
+        for raw in handle:
+            line = raw.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            key, _, value = line.partition("=")
+            key = key.strip()
+            value = value.strip().strip('"').strip("'")
+            if key and key not in os.environ:
+                os.environ[key] = value
+
 # Application configuration
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+_load_env_file(os.path.join(BASE_DIR, ".env"))
+_load_env_file(os.path.join(BASE_DIR, ".env.local"))
 DB_FILE = os.path.join(BASE_DIR, "crm.db")
 ALLOWED_ZOHO_DOMAINS = {"com", "eu", "in", "com.au"}
 STATIC_FILE_EXTENSIONS = {".css", ".html", ".ico", ".jpg", ".jpeg", ".js", ".jsx", ".json", ".png", ".svg", ".webp", ".woff", ".woff2"}
@@ -19,6 +41,483 @@ CRM_ADMIN_USER = os.environ.get("GADGETBOSS_CRM_USER")
 CRM_ADMIN_PASSWORD = os.environ.get("GADGETBOSS_CRM_PASSWORD")
 ALLOWED_ORIGIN = os.environ.get("GADGETBOSS_ALLOWED_ORIGIN")
 PAYSTACK_SECRET_KEY = os.environ.get("PAYSTACK_SECRET_KEY", "").strip()
+PAYSTACK_PUBLIC_KEY = os.environ.get("PAYSTACK_PUBLIC_KEY", "").strip()
+
+# ---------------------------------------------------------------------------
+# Passwordless customer auth (Hubtel OTP) — local-dev parity with api/auth/*
+# and api/account/*. Same cookie names, same HMAC signing scheme, same JSON
+# shapes, so the storefront behaves identically on 127.0.0.1 and on Vercel.
+# ---------------------------------------------------------------------------
+OTP_COOKIE = "gb_otp"
+SESSION_COOKIE = "gb_session"
+OTP_MAX_AGE_SECONDS = 600
+SESSION_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
+OTP_TTL_SECONDS = 300
+RESEND_COOLDOWN_SECONDS = 30
+MAX_OTP_ATTEMPTS = 5
+
+HUBTEL_DEFAULT_BASE_URL = "https://api-otp.hubtel.com"
+HUBTEL_DEFAULT_SENDER_ID = "GADGETBOSS"
+HUBTEL_SUCCESS_CODES = {"0", "0000", "0001"}
+HUBTEL_SUCCESS_STATUSES = {"0", "0000", "success", "ok", "true"}
+
+GH_COUNTRY_CODE = "233"
+GH_MOBILE_FIRST_DIGITS = {"2", "5"}
+
+AUTH_ERR_NOT_CONFIGURED = "Phone verification is not configured."
+AUTH_ERR_INVALID_PHONE = "Enter a valid Ghana mobile number."
+AUTH_ERR_SEND_FAILED = "Could not send the code. Try again."
+AUTH_ERR_VERIFY_FAILED = "Could not verify the code. Try again."
+AUTH_ERR_EXPIRED = "Your code expired. Request a new one."
+AUTH_ERR_TOO_MANY = "Too many attempts. Request a new code."
+AUTH_ERR_WRONG_CODE = "That code is not correct."
+AUTH_ERR_COOLDOWN = "Please wait before requesting another code."
+ACCOUNT_ERR_SIGN_IN = "Sign in to view your orders."
+ACCOUNT_ERR_NOT_FOUND = "Order not found."
+ACCOUNT_ERR_LOOKUP = "Could not load your orders. Try again."
+
+ORDER_SELECT = (
+    "id,receipt_no,status,total,subtotal,payment_method,created_at,customer_name,"
+    "customer_location,order_items(product_id,product_name,qty,unit_price,line_total)"
+)
+ORDER_DETAIL_SELECT = ORDER_SELECT + ",updated_at"
+TRACKING_STEPS = (
+    ("placed", "Order placed"),
+    ("confirmed", "Order confirmed"),
+    ("processing", "Preparing your order"),
+    ("dispatched", "Out for delivery"),
+    ("delivered", "Delivered"),
+)
+ORDER_STATUS_RANK = {
+    "PENDING": 0,
+    "CONFIRMED": 1,
+    "PROCESSING": 2,
+    "DISPATCHED": 3,
+    "DELIVERED": 4,
+    "COMPLETED": 4,
+}
+UUID_PATTERN = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.I)
+ORDER_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
+
+
+def now_seconds():
+    return int(time.time())
+
+
+def session_secret():
+    return os.environ.get("SESSION_SECRET", "").strip()
+
+
+def hubtel_config():
+    client_id = os.environ.get("HUBTEL_CLIENT_ID", "").strip()
+    client_secret = os.environ.get("HUBTEL_CLIENT_SECRET", "").strip()
+    sender_id = os.environ.get("HUBTEL_SENDER_ID", "").strip() or HUBTEL_DEFAULT_SENDER_ID
+    base_url = (os.environ.get("HUBTEL_OTP_BASE_URL", "").strip() or HUBTEL_DEFAULT_BASE_URL).rstrip("/")
+    return {
+        "client_id": client_id,
+        "client_secret": client_secret,
+        "sender_id": sender_id,
+        "base_url": base_url,
+        "configured": bool(client_id and client_secret),
+    }
+
+
+def supabase_config():
+    url = os.environ.get("SUPABASE_URL", "").strip().rstrip("/")
+    service_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    return {"url": url, "service_key": service_key, "configured": bool(url and service_key)}
+
+
+# --- Signed cookies -------------------------------------------------------
+def b64url_encode(raw):
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
+def b64url_decode(value):
+    padding = "=" * (-len(value) % 4)
+    return base64.urlsafe_b64decode(value + padding)
+
+
+def sign_payload(payload_obj, secret):
+    """base64url(json).base64url(hmacSha256) — matches api/_lib/cookies.js."""
+    payload = b64url_encode(json.dumps(payload_obj, separators=(",", ":")).encode("utf-8"))
+    signature = hmac.new(secret.encode("utf-8"), payload.encode("ascii"), hashlib.sha256).digest()
+    return f"{payload}.{b64url_encode(signature)}"
+
+
+def verify_signed_payload(token, secret):
+    if not token or not secret:
+        return None
+    index = token.rfind(".")
+    if index <= 0 or index == len(token) - 1:
+        return None
+    payload, signature = token[:index], token[index + 1:]
+    expected = b64url_encode(
+        hmac.new(secret.encode("utf-8"), payload.encode("ascii"), hashlib.sha256).digest()
+    )
+    if not hmac.compare_digest(signature, expected):
+        return None
+    try:
+        parsed = json.loads(b64url_decode(payload).decode("utf-8"))
+    except Exception:
+        return None
+    if not isinstance(parsed, dict):
+        return None
+    expires_at = parsed.get("exp")
+    if not isinstance(expires_at, (int, float)) or isinstance(expires_at, bool):
+        return None
+    if expires_at <= now_seconds():
+        return None
+    return parsed
+
+
+def parse_cookie_header(header):
+    cookies = {}
+    for part in (header or "").split(";"):
+        if "=" not in part:
+            continue
+        name, _, value = part.partition("=")
+        name = name.strip()
+        if not name:
+            continue
+        try:
+            cookies[name] = urllib.parse.unquote(value.strip())
+        except Exception:
+            cookies[name] = value.strip()
+    return cookies
+
+
+def build_cookie(name, value, max_age_seconds, secure):
+    parts = [
+        f"{name}={value}",
+        "HttpOnly",
+        "Path=/",
+        "SameSite=Lax",
+        f"Max-Age={max(0, int(max_age_seconds))}",
+    ]
+    if max_age_seconds <= 0:
+        parts.append("Expires=Thu, 01 Jan 1970 00:00:00 GMT")
+    if secure:
+        parts.append("Secure")
+    return "; ".join(parts)
+
+
+# --- Ghana phone normalisation (mirror of src/auth/phone.ts) --------------
+def normalize_gh_phone(value):
+    if value is None:
+        return None
+    digits = re.sub(r"[^0-9]", "", str(value).strip())
+    for _ in range(4):
+        if digits.startswith("00"):
+            digits = digits[2:]
+            continue
+        if digits.startswith(GH_COUNTRY_CODE) and len(digits) > 9:
+            digits = digits[3:]
+            continue
+        if digits.startswith("0") and len(digits) > 9:
+            digits = digits[1:]
+            continue
+        break
+    if len(digits) != 9:
+        return None
+    if digits[0] not in GH_MOBILE_FIRST_DIGITS:
+        return None
+    return f"+{GH_COUNTRY_CODE}{digits}"
+
+
+def gh_phone_variants(e164):
+    normalized = normalize_gh_phone(e164)
+    if not normalized:
+        return []
+    subscriber = normalized[4:]
+    return [
+        f"+{GH_COUNTRY_CODE}{subscriber}",
+        f"{GH_COUNTRY_CODE}{subscriber}",
+        f"0{subscriber}",
+        subscriber,
+    ]
+
+
+def mask_gh_phone(e164):
+    normalized = normalize_gh_phone(e164)
+    if not normalized:
+        return ""
+    subscriber = normalized[4:]
+    return f"+{GH_COUNTRY_CODE} {subscriber[:2]} *** {subscriber[5:]}"
+
+
+def normalize_otp_code(value):
+    digits = re.sub(r"[^0-9]", "", "" if value is None else str(value))
+    return digits if 4 <= len(digits) <= 8 else ""
+
+
+def pending_otp_response(phone):
+    return {
+        "ok": True,
+        "configured": True,
+        "phone": phone,
+        "maskedPhone": mask_gh_phone(phone),
+        "expiresInSeconds": OTP_TTL_SECONDS,
+        "resendInSeconds": RESEND_COOLDOWN_SECONDS,
+    }
+
+
+# --- Hubtel OTP -----------------------------------------------------------
+def _hubtel_post(cfg, path, body):
+    """Returns (http_status, parsed_json_or_None, raw_text). Never raises."""
+    basic = base64.b64encode(
+        f"{cfg['client_id']}:{cfg['client_secret']}".encode("utf-8")
+    ).decode("ascii")
+    request = urllib.request.Request(
+        cfg["base_url"] + path,
+        data=json.dumps(body).encode("utf-8"),
+        method="POST",
+        headers={
+            "Authorization": f"Basic {basic}",
+            "Content-Type": "application/json",
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            status = response.getcode()
+            text = response.read().decode("utf-8", "replace")
+    except urllib.error.HTTPError as err:
+        status = err.code
+        try:
+            text = err.read().decode("utf-8", "replace")
+        except Exception:
+            text = ""
+    except Exception as exc:
+        print(f"[hubtel] {path} transport error: {exc}")
+        return 0, None, ""
+
+    try:
+        parsed = json.loads(text) if text else None
+    except Exception:
+        parsed = None
+    return status, parsed, text
+
+
+def _hubtel_containers(payload):
+    if not isinstance(payload, dict):
+        return []
+    containers = [payload]
+    for key in ("data", "Data", "result", "Result", "response", "Response"):
+        nested = payload.get(key)
+        if isinstance(nested, dict):
+            containers.append(nested)
+    return containers
+
+
+def _hubtel_pick(payload, keys):
+    for container in _hubtel_containers(payload):
+        for key in keys:
+            value = container.get(key)
+            if value is None or value == "" or isinstance(value, (dict, list)):
+                continue
+            return value
+    return None
+
+
+def _hubtel_request_id(payload):
+    value = _hubtel_pick(payload, ("requestId", "RequestId", "request_id", "requestID", "otpRequestId"))
+    return "" if value is None else str(value)
+
+
+def _hubtel_prefix(payload):
+    value = _hubtel_pick(payload, ("prefix", "Prefix", "otpPrefix", "OtpPrefix", "otp_prefix"))
+    return "" if value is None else str(value)
+
+
+def _hubtel_success(status, payload):
+    if not 200 <= status < 300:
+        return False
+    code = _hubtel_pick(payload, ("code", "Code", "responseCode", "ResponseCode", "statusCode", "StatusCode"))
+    api_status = _hubtel_pick(payload, ("status", "Status"))
+    if code is None and api_status is None:
+        return True
+    if code is not None and str(code).strip().lower() in HUBTEL_SUCCESS_CODES:
+        return True
+    if api_status is not None and str(api_status).strip().lower() in HUBTEL_SUCCESS_STATUSES:
+        return True
+    return False
+
+
+def _hubtel_log_failure(label, status, text):
+    print(f"[hubtel] {label} failed: http={status or 'n/a'} body={str(text or '')[:500]}")
+
+
+def hubtel_send_otp(phone_e164, cfg):
+    status, payload, text = _hubtel_post(
+        cfg, "/otp/send", {"senderId": cfg["sender_id"], "phoneNumber": phone_e164, "countryCode": "GH"}
+    )
+    if not _hubtel_success(status, payload):
+        _hubtel_log_failure("send", status, text)
+        return {"ok": False, "requestId": "", "prefix": ""}
+    request_id = _hubtel_request_id(payload)
+    if not request_id:
+        _hubtel_log_failure("send (missing requestId)", status, text)
+        return {"ok": False, "requestId": "", "prefix": ""}
+    return {"ok": True, "requestId": request_id, "prefix": _hubtel_prefix(payload)}
+
+
+def hubtel_resend_otp(request_id, prefix, cfg):
+    status, payload, text = _hubtel_post(cfg, "/otp/resend", {"requestId": request_id, "prefix": prefix})
+    if not _hubtel_success(status, payload):
+        _hubtel_log_failure("resend", status, text)
+        return {"ok": False, "requestId": "", "prefix": ""}
+    return {
+        "ok": True,
+        "requestId": _hubtel_request_id(payload) or request_id,
+        "prefix": _hubtel_prefix(payload) or prefix,
+    }
+
+
+def hubtel_verify_otp(request_id, prefix, code, cfg):
+    """ok=False with upstream_error=False means 'Hubtel says the code is wrong'."""
+    status, payload, text = _hubtel_post(
+        cfg, "/otp/verify", {"requestId": request_id, "prefix": prefix, "code": code}
+    )
+    if status == 0:
+        return {"ok": False, "upstreamError": True}
+    if _hubtel_success(status, payload):
+        return {"ok": True, "upstreamError": False}
+
+    message = _hubtel_pick(payload, ("message", "Message", "description", "Description", "error", "Error"))
+    haystack = f"{message or ''} {text or ''}".lower()
+    if prefix and "prefix" in haystack:
+        # Some Hubtel products expect the prefix concatenated onto the code.
+        _hubtel_log_failure("verify (retrying with concatenated prefix)", status, text)
+        retry_status, retry_payload, retry_text = _hubtel_post(
+            cfg, "/otp/verify", {"requestId": request_id, "prefix": prefix, "code": f"{prefix}-{code}"}
+        )
+        if retry_status == 0:
+            return {"ok": False, "upstreamError": True}
+        if _hubtel_success(retry_status, retry_payload):
+            return {"ok": True, "upstreamError": False}
+        _hubtel_log_failure("verify retry", retry_status, retry_text)
+        return {"ok": False, "upstreamError": retry_status >= 500}
+
+    _hubtel_log_failure("verify", status, text)
+    return {"ok": False, "upstreamError": status >= 500}
+
+
+# --- Supabase PostgREST (service role, server-side only) ------------------
+def postgrest_in_list(values):
+    quoted = ",".join('"{}"'.format(str(value).replace('"', '""')) for value in values)
+    return f"in.({quoted})"
+
+
+def supabase_select(table, params, cfg):
+    query = urllib.parse.urlencode(params)
+    request = urllib.request.Request(
+        f"{cfg['url']}/rest/v1/{table}?{query}",
+        method="GET",
+        headers={
+            "apikey": cfg["service_key"],
+            "Authorization": f"Bearer {cfg['service_key']}",
+            "Accept": "application/json",
+        },
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=20) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as err:
+        try:
+            detail = err.read().decode("utf-8", "replace")
+        except Exception:
+            detail = ""
+        print(f"[supabase] {table} query failed: http={err.code} body={detail[:500]}")
+        raise RuntimeError(f"Supabase query failed with status {err.code}")
+    except Exception as exc:
+        print(f"[supabase] {table} query error: {exc}")
+        raise RuntimeError("Supabase query failed")
+    return payload if isinstance(payload, list) else []
+
+
+def lookup_customer(phone):
+    """Never fails sign-in: an unset/unreachable Supabase just yields blank fields."""
+    blank = {"phone": phone, "name": None, "email": None, "location": None}
+    cfg = supabase_config()
+    if not cfg["configured"]:
+        return blank
+    try:
+        rows = supabase_select(
+            "customers",
+            {
+                "select": "name,phone,email,location",
+                "phone": postgrest_in_list(gh_phone_variants(phone)),
+                "order": "updated_at.desc",
+                "limit": "1",
+            },
+            cfg,
+        )
+    except RuntimeError:
+        return blank
+    if not rows:
+        return blank
+    row = rows[0]
+    return {
+        "phone": phone,
+        "name": row.get("name") or None,
+        "email": row.get("email") or None,
+        "location": row.get("location") or None,
+    }
+
+
+def shape_order(row):
+    items = row.get("order_items")
+    return {
+        "id": row.get("id"),
+        "receiptNo": row.get("receipt_no") or None,
+        "status": row.get("status") or None,
+        "total": float(row.get("total") or 0),
+        "subtotal": float(row.get("subtotal") or 0),
+        "paymentMethod": row.get("payment_method") or None,
+        "createdAt": row.get("created_at") or None,
+        "customerName": row.get("customer_name") or None,
+        "customerLocation": row.get("customer_location") or None,
+        "items": [
+            {
+                "productId": item.get("product_id"),
+                "productName": item.get("product_name"),
+                "qty": int(item.get("qty") or 0),
+                "unitPrice": float(item.get("unit_price") or 0),
+                "lineTotal": float(item.get("line_total") or 0),
+            }
+            for item in (items if isinstance(items, list) else [])
+        ],
+    }
+
+
+def build_tracking(row):
+    status = str(row.get("status") or "PENDING").upper()
+    placed_at = row.get("created_at") or None
+    updated_at = row.get("updated_at") or None
+    cancelled = status == "CANCELLED"
+    reached = 0 if cancelled else ORDER_STATUS_RANK.get(status, 0)
+
+    steps = []
+    for index, (key, label) in enumerate(TRACKING_STEPS):
+        if index == 0:
+            at = placed_at
+        elif not cancelled and index == reached:
+            at = updated_at or placed_at
+        else:
+            at = None
+        steps.append(
+            {"key": key, "label": label, "done": (not cancelled) and index <= reached, "at": at}
+        )
+
+    if cancelled:
+        steps[0]["done"] = True
+        steps.append(
+            {"key": "cancelled", "label": "Cancelled", "done": True, "at": updated_at or placed_at}
+        )
+
+    return {"status": status, "placedAt": placed_at, "steps": steps}
+
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -348,6 +847,20 @@ class DynamicCRMServer(SimpleHTTPRequestHandler):
         
     def do_GET(self):
         request_path = self._request_path()
+        # Customer-facing auth/account routes are intentionally outside the CRM gate.
+        if request_path == "/api/public-config":
+            self.handle_public_config()
+            return
+        if request_path == "/api/auth/session":
+            self.handle_auth_session()
+            return
+        if request_path in {"/api/account/orders", "/api/account/orders/"}:
+            self.handle_account_orders()
+            return
+        if request_path.startswith("/api/account/orders/"):
+            self.handle_account_order_detail(request_path[len("/api/account/orders/"):])
+            return
+
         if request_path.startswith("/api/crm/") or request_path == "/crm" or request_path.startswith("/crm/"):
             if not self._require_admin():
                 return
@@ -364,12 +877,35 @@ class DynamicCRMServer(SimpleHTTPRequestHandler):
         if request_path in {"/api/paystack/verify", "/api/paystack-verify"}:
             self.handle_paystack_verify()
             return
+        if request_path == "/api/auth/request-otp":
+            self.handle_auth_request_otp()
+            return
+        if request_path == "/api/auth/verify-otp":
+            self.handle_auth_verify_otp()
+            return
+        if request_path == "/api/auth/resend-otp":
+            self.handle_auth_resend_otp()
+            return
+        if request_path == "/api/auth/logout":
+            self.handle_auth_logout()
+            return
         if request_path.startswith("/api/crm/"):
             if not self._require_admin():
                 return
             self.handle_api_post()
         else:
             self.send_error(404, "Endpoint not found.")
+
+    def handle_public_config(self):
+        supabase_url = os.environ.get("SUPABASE_URL") or os.environ.get("VITE_SUPABASE_URL") or ""
+        supabase_anon = os.environ.get("SUPABASE_ANON_KEY") or os.environ.get("VITE_SUPABASE_ANON_KEY") or ""
+        self.send_json_response(
+            {
+                "PAYSTACK_PUBLIC_KEY": PAYSTACK_PUBLIC_KEY,
+                "SUPABASE_URL": supabase_url.strip(),
+                "SUPABASE_ANON_KEY": supabase_anon.strip(),
+            }
+        )
 
     def handle_paystack_verify(self):
         try:
@@ -427,7 +963,336 @@ class DynamicCRMServer(SimpleHTTPRequestHandler):
             },
             status=200 if verified else 400,
         )
-            
+
+    # --- Passwordless customer auth ---------------------------------------
+    def _read_json_body(self):
+        """Always drains the request body. Returns (data, parsed_ok)."""
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+        except (TypeError, ValueError):
+            return {}, False
+        try:
+            raw = self.rfile.read(content_length).decode("utf-8") if content_length > 0 else ""
+        except Exception:
+            return {}, False
+        if not raw:
+            return {}, True
+        try:
+            parsed = json.loads(raw)
+        except (ValueError, json.JSONDecodeError):
+            return {}, False
+        return (parsed if isinstance(parsed, dict) else {}), True
+
+    def _is_secure_request(self):
+        forwarded = self.headers.get("X-Forwarded-Proto", "") or ""
+        first = forwarded.split(",")[0].strip().lower()
+        # Plain HTTP on 127.0.0.1 must not get a Secure cookie or it is dropped.
+        return first == "https"
+
+    def _request_cookies(self):
+        return parse_cookie_header(self.headers.get("Cookie", ""))
+
+    def _otp_cookie_header(self, state, secret):
+        return build_cookie(OTP_COOKIE, sign_payload(state, secret), OTP_MAX_AGE_SECONDS, self._is_secure_request())
+
+    def _session_cookie_header(self, phone, secret):
+        issued_at = now_seconds()
+        state = {"phone": phone, "iat": issued_at, "exp": issued_at + SESSION_MAX_AGE_SECONDS}
+        return build_cookie(
+            SESSION_COOKIE, sign_payload(state, secret), SESSION_MAX_AGE_SECONDS, self._is_secure_request()
+        )
+
+    def _cleared_cookie_header(self, name):
+        return build_cookie(name, "", 0, self._is_secure_request())
+
+    def _pending_otp(self, secret):
+        return verify_signed_payload(self._request_cookies().get(OTP_COOKIE), secret)
+
+    def _session_phone(self):
+        secret = session_secret()
+        if not secret:
+            return None
+        payload = verify_signed_payload(self._request_cookies().get(SESSION_COOKIE), secret)
+        if not payload:
+            return None
+        return normalize_gh_phone(payload.get("phone"))
+
+    def _auth_not_configured_response(self):
+        self.send_json_response(
+            {"ok": False, "configured": False, "error": AUTH_ERR_NOT_CONFIGURED}, status=200
+        )
+
+    def handle_auth_request_otp(self):
+        data, parsed_ok = self._read_json_body()
+        secret = session_secret()
+        cfg = hubtel_config()
+        if not secret or not cfg["configured"]:
+            self._auth_not_configured_response()
+            return
+        if not parsed_ok:
+            self.send_json_response({"ok": False, "error": "Invalid JSON"}, status=400)
+            return
+
+        phone = normalize_gh_phone(data.get("phone"))
+        if not phone:
+            self.send_json_response({"ok": False, "error": AUTH_ERR_INVALID_PHONE}, status=400)
+            return
+
+        sent = hubtel_send_otp(phone, cfg)
+        if not sent["ok"]:
+            self.send_json_response({"ok": False, "error": AUTH_ERR_SEND_FAILED}, status=502)
+            return
+
+        issued_at = now_seconds()
+        state = {
+            "phone": phone,
+            "requestId": sent["requestId"],
+            "prefix": sent["prefix"],
+            "attempts": 0,
+            "lastSentAt": issued_at,
+            "exp": issued_at + OTP_MAX_AGE_SECONDS,
+        }
+        self.send_json_response(
+            pending_otp_response(phone), cookies=[self._otp_cookie_header(state, secret)]
+        )
+
+    def handle_auth_verify_otp(self):
+        data, parsed_ok = self._read_json_body()
+        secret = session_secret()
+        cfg = hubtel_config()
+        if not secret or not cfg["configured"]:
+            self._auth_not_configured_response()
+            return
+        if not parsed_ok:
+            self.send_json_response({"ok": False, "error": "Invalid JSON"}, status=400)
+            return
+
+        pending = self._pending_otp(secret)
+        if not pending or not pending.get("phone") or not pending.get("requestId"):
+            self.send_json_response(
+                {"ok": False, "error": AUTH_ERR_EXPIRED, "expired": True},
+                status=400,
+                cookies=[self._cleared_cookie_header(OTP_COOKIE)],
+            )
+            return
+
+        try:
+            attempts = int(pending.get("attempts") or 0)
+        except (TypeError, ValueError):
+            attempts = 0
+        if attempts >= MAX_OTP_ATTEMPTS:
+            self.send_json_response({"ok": False, "error": AUTH_ERR_TOO_MANY}, status=429)
+            return
+
+        code = normalize_otp_code(data.get("code"))
+        if not code:
+            self.send_json_response(
+                {
+                    "ok": False,
+                    "error": "Enter the code we sent you.",
+                    "attemptsLeft": MAX_OTP_ATTEMPTS - attempts,
+                },
+                status=400,
+            )
+            return
+
+        result = hubtel_verify_otp(pending["requestId"], pending.get("prefix") or "", code, cfg)
+        if not result["ok"] and result["upstreamError"]:
+            self.send_json_response({"ok": False, "error": AUTH_ERR_VERIFY_FAILED}, status=502)
+            return
+
+        if not result["ok"]:
+            next_attempts = attempts + 1
+            state = dict(pending)
+            state["attempts"] = next_attempts
+            cookies = [self._otp_cookie_header(state, secret)]
+            if next_attempts >= MAX_OTP_ATTEMPTS:
+                self.send_json_response(
+                    {"ok": False, "error": AUTH_ERR_TOO_MANY}, status=429, cookies=cookies
+                )
+                return
+            self.send_json_response(
+                {
+                    "ok": False,
+                    "error": AUTH_ERR_WRONG_CODE,
+                    "attemptsLeft": MAX_OTP_ATTEMPTS - next_attempts,
+                },
+                status=400,
+                cookies=cookies,
+            )
+            return
+
+        phone = pending["phone"]
+        self.send_json_response(
+            {
+                "ok": True,
+                "configured": True,
+                "phone": phone,
+                "maskedPhone": mask_gh_phone(phone),
+                "customer": lookup_customer(phone),
+            },
+            cookies=[
+                self._cleared_cookie_header(OTP_COOKIE),
+                self._session_cookie_header(phone, secret),
+            ],
+        )
+
+    def handle_auth_resend_otp(self):
+        self._read_json_body()
+        secret = session_secret()
+        cfg = hubtel_config()
+        if not secret or not cfg["configured"]:
+            self._auth_not_configured_response()
+            return
+
+        pending = self._pending_otp(secret)
+        if not pending or not pending.get("phone") or not pending.get("requestId"):
+            self.send_json_response(
+                {"ok": False, "error": AUTH_ERR_EXPIRED, "expired": True},
+                status=400,
+                cookies=[self._cleared_cookie_header(OTP_COOKIE)],
+            )
+            return
+
+        try:
+            last_sent_at = int(pending.get("lastSentAt") or 0)
+        except (TypeError, ValueError):
+            last_sent_at = 0
+        elapsed = now_seconds() - last_sent_at
+        if elapsed < RESEND_COOLDOWN_SECONDS:
+            remaining = RESEND_COOLDOWN_SECONDS - elapsed
+            self.send_json_response(
+                {
+                    "ok": False,
+                    "error": AUTH_ERR_COOLDOWN,
+                    # Clamped so a skewed clock can never advertise a nonsense wait.
+                    "retryAfterSeconds": min(RESEND_COOLDOWN_SECONDS, max(1, remaining)),
+                },
+                status=429,
+            )
+            return
+
+        resent = hubtel_resend_otp(pending["requestId"], pending.get("prefix") or "", cfg)
+        if not resent["ok"]:
+            self.send_json_response({"ok": False, "error": AUTH_ERR_SEND_FAILED}, status=502)
+            return
+
+        issued_at = now_seconds()
+        state = {
+            "phone": pending["phone"],
+            "requestId": resent["requestId"] or pending["requestId"],
+            "prefix": resent["prefix"] or pending.get("prefix") or "",
+            "attempts": 0,
+            "lastSentAt": issued_at,
+            "exp": issued_at + OTP_MAX_AGE_SECONDS,
+        }
+        self.send_json_response(
+            pending_otp_response(pending["phone"]),
+            cookies=[self._otp_cookie_header(state, secret)],
+        )
+
+    def handle_auth_logout(self):
+        self._read_json_body()
+        self.send_json_response(
+            {"ok": True},
+            cookies=[
+                self._cleared_cookie_header(SESSION_COOKIE),
+                self._cleared_cookie_header(OTP_COOKIE),
+            ],
+        )
+
+    def handle_auth_session(self):
+        cfg = hubtel_config()
+        configured = bool(session_secret() and cfg["configured"])
+        phone = self._session_phone()
+        if not phone:
+            self.send_json_response({"authenticated": False, "configured": configured})
+            return
+        self.send_json_response(
+            {
+                "authenticated": True,
+                "phone": phone,
+                "maskedPhone": mask_gh_phone(phone),
+                "configured": configured,
+            }
+        )
+
+    # --- Customer account -------------------------------------------------
+    def handle_account_orders(self):
+        phone = self._session_phone()
+        if not phone:
+            self.send_json_response({"ok": False, "error": ACCOUNT_ERR_SIGN_IN}, status=401)
+            return
+
+        cfg = supabase_config()
+        if not cfg["configured"]:
+            self.send_json_response({"ok": True, "configured": False, "orders": []})
+            return
+
+        try:
+            rows = supabase_select(
+                "orders",
+                {
+                    "select": ORDER_SELECT,
+                    "customer_phone": postgrest_in_list(gh_phone_variants(phone)),
+                    "order": "created_at.desc",
+                    "limit": "50",
+                },
+                cfg,
+            )
+        except RuntimeError:
+            self.send_json_response({"ok": False, "error": ACCOUNT_ERR_LOOKUP}, status=502)
+            return
+
+        self.send_json_response(
+            {"ok": True, "configured": True, "orders": [shape_order(row) for row in rows]}
+        )
+
+    def handle_account_order_detail(self, raw_id):
+        phone = self._session_phone()
+        if not phone:
+            self.send_json_response({"ok": False, "error": ACCOUNT_ERR_SIGN_IN}, status=401)
+            return
+
+        try:
+            order_id = urllib.parse.unquote(raw_id or "").strip("/")
+        except Exception:
+            order_id = ""
+
+        # Anti-enumeration: "not yours", "bad id" and "doesn't exist" are one answer.
+        def not_found():
+            self.send_json_response({"ok": False, "error": ACCOUNT_ERR_NOT_FOUND}, status=404)
+
+        if not order_id or len(order_id) > 64 or not ORDER_ID_PATTERN.match(order_id):
+            not_found()
+            return
+
+        cfg = supabase_config()
+        if not cfg["configured"]:
+            not_found()
+            return
+
+        params = {
+            "select": ORDER_DETAIL_SELECT,
+            "customer_phone": postgrest_in_list(gh_phone_variants(phone)),
+            "limit": "1",
+        }
+        params["id" if UUID_PATTERN.match(order_id) else "receipt_no"] = f"eq.{order_id}"
+
+        try:
+            rows = supabase_select("orders", params, cfg)
+        except RuntimeError:
+            self.send_json_response({"ok": False, "error": ACCOUNT_ERR_LOOKUP}, status=502)
+            return
+
+        if not rows:
+            not_found()
+            return
+
+        order = shape_order(rows[0])
+        order["tracking"] = build_tracking(rows[0])
+        self.send_json_response({"ok": True, "configured": True, "order": order})
+
     def handle_api_get(self):
         conn = sqlite3.connect(DB_FILE)
         cursor = conn.cursor()
@@ -653,9 +1518,11 @@ class DynamicCRMServer(SimpleHTTPRequestHandler):
             
         conn.close()
 
-    def send_json_response(self, data, status=200):
+    def send_json_response(self, data, status=200, cookies=None):
         self.send_response(status)
         self.send_header('Content-Type', 'application/json')
+        for cookie in (cookies or []):
+            self.send_header('Set-Cookie', cookie)
         self.end_headers()
         self.wfile.write(json.dumps(data).encode('utf-8'))
 

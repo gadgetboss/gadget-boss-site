@@ -359,8 +359,73 @@ const stickyCheckoutTrigger = document.getElementById("sticky-checkout-trigger")
 const newsletterForm = document.getElementById("newsletter-subscription-form");
 let activeProductDetail = null;
 
+// --- VERIFICATION MODAL + ACCOUNT DRAWER REFERENCES ---
+const myPurchasesTrigger = document.getElementById("my-purchases-trigger");
+const trackOrderTrigger = document.getElementById("track-order-trigger");
+const accountTrigger = document.getElementById("account-trigger");
+
+const verifyModalOverlay = document.getElementById("verify-modal-overlay");
+const verifyModalPanel = document.getElementById("verify-modal-panel");
+const closeVerifyModalBtn = document.getElementById("close-verify-modal-btn");
+const verifyIntro = document.getElementById("verify-intro");
+const verifyPhoneForm = document.getElementById("verify-phone-form");
+const verifyPhoneInput = document.getElementById("verify-phone-input");
+const verifySendBtn = document.getElementById("verify-send-btn");
+const verifyCodeForm = document.getElementById("verify-code-form");
+const verifyMaskedPhone = document.getElementById("verify-masked-phone");
+const verifyEditPhoneBtn = document.getElementById("verify-edit-phone-btn");
+const verifyOtpGroup = document.getElementById("verify-otp-group");
+const verifyOtpBoxes = Array.prototype.slice.call(document.querySelectorAll(".verify-otp-box"));
+const verifyCountdown = document.getElementById("verify-countdown");
+const verifyResendBtn = document.getElementById("verify-resend-btn");
+const verifyCodeBtn = document.getElementById("verify-code-btn");
+const verifySuccess = document.getElementById("verify-success");
+const verifySuccessText = document.getElementById("verify-success-text");
+const verifyStatus = document.getElementById("verify-status");
+
+const accountOverlayWrapper = document.getElementById("account-overlay-wrapper");
+const accountDrawerPanel = document.getElementById("account-drawer-panel");
+const accountDrawerTitle = document.getElementById("account-drawer-title");
+const accountDrawerSub = document.getElementById("account-drawer-sub");
+const accountDrawerBody = document.getElementById("account-drawer-body");
+const accountDrawerFooter = document.getElementById("account-drawer-footer");
+const accountBackBtn = document.getElementById("account-back-btn");
+const closeAccountBtn = document.getElementById("close-account-btn");
+const accountSignoutBtn = document.getElementById("account-signout-btn");
+const custPhoneVerifiedBadge = document.getElementById("cust-phone-verified-badge");
+
 // --- APP INITIALIZATION ---
+async function hydratePublicConfig() {
+  const env = window.__GADGETBOSS_ENV__ || {};
+  const needsPaystack = !env.PAYSTACK_PUBLIC_KEY;
+  const needsSupabase = !env.SUPABASE_URL || !env.SUPABASE_ANON_KEY;
+  if (!needsPaystack && !needsSupabase) return;
+
+  for (const url of ["/api/public-config"]) {
+    try {
+      const res = await fetch(url);
+      if (res.status === 404) continue;
+      const data = await res.json().catch(() => ({}));
+      window.__GADGETBOSS_ENV__ = window.__GADGETBOSS_ENV__ || {};
+      if (needsPaystack && data.PAYSTACK_PUBLIC_KEY) {
+        window.__GADGETBOSS_ENV__.PAYSTACK_PUBLIC_KEY = data.PAYSTACK_PUBLIC_KEY;
+      }
+      if (needsSupabase && data.SUPABASE_URL) {
+        window.__GADGETBOSS_ENV__.SUPABASE_URL = data.SUPABASE_URL;
+      }
+      if (needsSupabase && data.SUPABASE_ANON_KEY) {
+        window.__GADGETBOSS_ENV__.SUPABASE_ANON_KEY = data.SUPABASE_ANON_KEY;
+      }
+      return;
+    } catch {
+      continue;
+    }
+  }
+}
+
 async function init() {
+  await hydratePublicConfig();
+
   // Load Theme
   const savedTheme = localStorage.getItem("gadgetboss-theme") || "dark";
   if (savedTheme === "light") {
@@ -395,6 +460,7 @@ async function init() {
   renderProducts();
   renderCart();
   setupEventListeners();
+  setupAuthEventListeners();
   subscribeLiveInventory();
   
   // Initialize Lucide Icons
@@ -614,12 +680,13 @@ function setupEventListeners() {
   // Sticky Bar Trigger
   stickyCheckoutTrigger.addEventListener("click", () => {
     if (!cart.length) return;
-    openCheckoutModal("paystack");
+    startGatedCheckout("paystack");
   });
 
-  // checkout actions
-  checkoutPaystackBtn.addEventListener("click", () => openCheckoutModal("paystack"));
-  checkoutWhatsappBtn.addEventListener("click", () => openCheckoutModal("whatsapp"));
+  // checkout actions — startGatedCheckout confirms the phone number first when
+  // OTP login is live, then opens the same checkout modal as before.
+  checkoutPaystackBtn.addEventListener("click", () => startGatedCheckout("paystack"));
+  checkoutWhatsappBtn.addEventListener("click", () => startGatedCheckout("whatsapp"));
 
   closeCheckoutModalBtn.addEventListener("click", closeCheckoutModal);
   checkoutModalOverlay.addEventListener("click", (e) => {
@@ -1081,9 +1148,17 @@ function toggleCartDrawer(open) {
   }
 }
 
+function formatGhs(amount, minimumFractionDigits) {
+  return new Intl.NumberFormat('en-GH', {
+    style: 'currency',
+    currency: 'GHS',
+    minimumFractionDigits: typeof minimumFractionDigits === 'number' ? minimumFractionDigits : 0
+  }).format(Number(amount) || 0);
+}
+
 function formatProductPrice(product) {
   if (product.price === 0) return "Price on Request";
-  return new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', minimumFractionDigits: 0 }).format(product.price);
+  return formatGhs(product.price);
 }
 
 function openProductDetail(productId) {
@@ -1269,9 +1344,18 @@ function startPaystackCheckout({ name, email, phone, location, provider, totalPr
 
 async function finalizePaystackOrder({ name, email, phone, location, provider, totalPrice, amountPesewas, reference }) {
   const verification = await verifyPaystackPayment(reference, amountPesewas);
-  if (verification.configured && !verification.verified) {
-    alert(verification.error || "Paystack payment was not verified. Your card/MoMo was not captured for this order.");
-    return;
+  const publicKey = getPaystackPublicKey();
+  if (publicKey) {
+    if (!verification.configured) {
+      alert(
+        `Paystack is not fully configured on the server yet.\n\nYour payment reference: ${reference}\nPlease send this to GADGETBO$$ on WhatsApp so we can confirm your order manually.`
+      );
+      return;
+    }
+    if (!verification.verified) {
+      alert(verification.error || "Paystack payment was not verified. Your card/MoMo was not captured for this order.");
+      return;
+    }
   }
 
   const cartSnapshot = cart.map((item) => ({
@@ -1340,6 +1424,8 @@ function openCheckoutModal(type) {
 
   summaryItemsCount.innerText = `${totalCount} ${totalCount === 1 ? 'item' : 'items'}`;
   summaryTotalPrice.innerText = priceFormatted;
+
+  applyVerifiedCustomerToCheckoutForm();
 
   const momoFields = document.getElementById("momo-fields-container");
   
@@ -1455,6 +1541,1092 @@ async function handleCheckoutSubmit(e) {
     const whatsappUrl = `https://wa.me/${WHATSAPP_PHONE}?text=${encodedText}`;
 
     window.open(whatsappUrl, "_blank");
+  }
+}
+
+// --- CUSTOMER VERIFICATION (HUBTEL OTP) ---
+// The HttpOnly session cookie set by /api/auth/* is the only authority on who is
+// signed in. Everything cached below is display state for this page load only.
+const AUTH_API = {
+  session: "/api/auth/session",
+  requestOtp: "/api/auth/request-otp",
+  verifyOtp: "/api/auth/verify-otp",
+  resendOtp: "/api/auth/resend-otp",
+  logout: "/api/auth/logout",
+  orders: "/api/account/orders"
+};
+
+const VERIFY_INTRO_CHECKOUT = "One quick step: confirm the number on your phone. It secures your order against mix-ups and lets you track the delivery later.";
+const VERIFY_INTRO_ORDERS = "Confirm your number to pull up the orders placed with it.";
+const VERIFY_INTRO_TRACKING = "Confirm your number to see live delivery tracking for your orders.";
+
+const authState = {
+  loaded: false,
+  configured: null, // false once we know OTP login is unavailable
+  authenticated: false,
+  phone: "",
+  maskedPhone: "",
+  customer: null
+};
+
+const verifyFlow = {
+  open: false,
+  busy: false,
+  expired: false,
+  intent: "checkout",
+  phone: "",
+  maskedPhone: "",
+  successText: "",
+  onVerified: null,
+  expiryDeadline: 0,
+  resendDeadline: 0,
+  tickHandle: null,
+  lastFocus: null
+};
+
+let sessionRequest = null;
+let checkoutGateBusy = false;
+
+// Returns { reachable, status, data }. `reachable: false` means the endpoint is
+// missing, offline, or answered with something that is not JSON — in every one of
+// those cases the caller must fail open rather than block the customer.
+async function apiRequest(url, options) {
+  const opts = options || {};
+  const init = { method: opts.method || "GET", credentials: "same-origin" };
+  if (opts.body !== undefined) {
+    init.headers = { "Content-Type": "application/json" };
+    init.body = JSON.stringify(opts.body);
+  }
+  try {
+    const res = await fetch(url, init);
+    let data = null;
+    try {
+      data = await res.json();
+    } catch (err) {
+      data = null;
+    }
+    if (!data || typeof data !== "object") {
+      return { reachable: false, status: res.status, data: null };
+    }
+    return { reachable: true, status: res.status, data: data };
+  } catch (err) {
+    return { reachable: false, status: 0, data: null };
+  }
+}
+
+function digitsOnly(value) {
+  return String(value === undefined || value === null ? "" : value).replace(/\D/g, "");
+}
+
+// Accepts 024 123 4567, 0241234567, 241234567, +233241234567 and 233241234567.
+// Returns "" when it is clearly not a Ghana mobile number. The server does the
+// authoritative normalisation; this only decides when to enable the button.
+function normalizeGhanaPhone(value) {
+  let digits = digitsOnly(value);
+  if (digits.length === 13 && digits.indexOf("2330") === 0) {
+    digits = digits.slice(4);
+  } else if (digits.length === 12 && digits.indexOf("233") === 0) {
+    digits = digits.slice(3);
+  } else if (digits.length === 10 && digits.charAt(0) === "0") {
+    digits = digits.slice(1);
+  }
+  if (!/^[2-5]\d{8}$/.test(digits)) return "";
+  return "+233" + digits;
+}
+
+function toLocalGhanaPhone(value) {
+  const normalized = normalizeGhanaPhone(value);
+  if (normalized) return "0" + normalized.slice(4);
+  return digitsOnly(value).slice(0, 10);
+}
+
+function maskPhoneNumber(phone) {
+  const value = String(phone || "");
+  if (value.length < 5) return value;
+  return value.slice(0, -4).replace(/\d/g, "*") + value.slice(-4);
+}
+
+function escapeHtml(value) {
+  return String(value === undefined || value === null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function applySessionPayload(data) {
+  authState.loaded = true;
+  authState.configured = data.configured !== false;
+  authState.authenticated = !!data.authenticated;
+
+  // A signed-out session carries no identity, so never hold on to one.
+  if (!authState.authenticated) {
+    authState.phone = "";
+    authState.maskedPhone = "";
+    authState.customer = null;
+    return;
+  }
+
+  authState.phone = data.phone || "";
+  authState.maskedPhone = data.maskedPhone || maskPhoneNumber(authState.phone);
+  if (data.customer) authState.customer = data.customer;
+}
+
+// Called whenever the auth API is absent or broken: the storefront then behaves
+// exactly as it did before OTP login existed.
+function markAuthUnavailable() {
+  authState.loaded = true;
+  authState.configured = false;
+  authState.authenticated = false;
+  authState.phone = "";
+  authState.maskedPhone = "";
+  authState.customer = null;
+}
+
+function getSession() {
+  if (authState.loaded) return Promise.resolve(authState);
+  if (sessionRequest) return sessionRequest;
+  sessionRequest = apiRequest(AUTH_API.session).then((res) => {
+    if (res.reachable && res.data) {
+      applySessionPayload(res.data);
+    } else {
+      markAuthUnavailable();
+    }
+    sessionRequest = null;
+    return authState;
+  });
+  return sessionRequest;
+}
+
+// The single gate: run `onVerified` immediately when OTP login is off/unreachable
+// or the customer is already verified, otherwise verify first and then continue.
+async function requireVerifiedSession(options) {
+  const opts = options || {};
+  const proceed = typeof opts.onVerified === "function" ? opts.onVerified : function () {};
+  const session = await getSession();
+
+  if (!session.configured || session.authenticated) {
+    proceed();
+    return;
+  }
+
+  openVerifyModal({
+    intent: opts.intent,
+    intro: opts.intro,
+    successText: opts.successText,
+    onVerified: proceed
+  });
+}
+
+function setVerifyStatus(message, tone) {
+  verifyStatus.textContent = message || "";
+  verifyStatus.className = "verify-status" + (message && tone ? " is-" + tone : "");
+}
+
+function showVerifyStep(step) {
+  verifyPhoneForm.hidden = step !== "phone";
+  verifyCodeForm.hidden = step !== "code";
+  verifySuccess.hidden = step !== "success";
+}
+
+function setVerifyBusy(busy, target) {
+  verifyFlow.busy = !!busy;
+  const activeBtn = target === "code" ? verifyCodeBtn : verifySendBtn;
+  [verifySendBtn, verifyCodeBtn].forEach((btn) => btn.classList.remove("is-loading"));
+  if (busy && target !== "resend") activeBtn.classList.add("is-loading");
+
+  verifyPhoneInput.disabled = !!busy;
+  verifyOtpBoxes.forEach((box) => { box.disabled = !!busy; });
+  verifyEditPhoneBtn.disabled = !!busy;
+
+  if (busy) {
+    verifySendBtn.disabled = true;
+    verifyCodeBtn.disabled = true;
+    verifyResendBtn.disabled = true;
+  } else {
+    syncVerifyPhoneButton();
+    syncVerifyCodeButton();
+    updateVerifyTimers();
+  }
+}
+
+function syncVerifyPhoneButton() {
+  verifySendBtn.disabled = verifyFlow.busy || !normalizeGhanaPhone(verifyPhoneInput.value);
+}
+
+function syncVerifyCodeButton() {
+  verifyCodeBtn.disabled = verifyFlow.busy || verifyFlow.expired || otpValue().length !== verifyOtpBoxes.length;
+}
+
+function otpValue() {
+  return verifyOtpBoxes.map((box) => digitsOnly(box.value)).join("");
+}
+
+function setOtpValue(value) {
+  const chars = digitsOnly(value).slice(0, verifyOtpBoxes.length).split("");
+  verifyOtpBoxes.forEach((box, idx) => { box.value = chars[idx] || ""; });
+}
+
+function focusOtpBox(index) {
+  const bounded = Math.max(0, Math.min(verifyOtpBoxes.length - 1, index));
+  const box = verifyOtpBoxes[bounded];
+  if (!box) return;
+  box.focus();
+  if (box.select) box.select();
+}
+
+function formatCountdown(totalSeconds) {
+  const mins = Math.floor(totalSeconds / 60);
+  const secs = totalSeconds % 60;
+  return String(mins).padStart(2, "0") + ":" + String(secs).padStart(2, "0");
+}
+
+function secondsUntil(deadline) {
+  return Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+}
+
+function updateVerifyTimers() {
+  // Nothing to count while the customer is still on the phone-entry step.
+  if (verifyCodeForm.hidden || !verifyFlow.expiryDeadline) return;
+
+  const codeLeft = secondsUntil(verifyFlow.expiryDeadline);
+  const resendLeft = secondsUntil(verifyFlow.resendDeadline);
+
+  if (codeLeft > 0) {
+    verifyCountdown.textContent = "Expires in " + formatCountdown(codeLeft);
+    verifyCountdown.classList.remove("is-expired");
+  } else {
+    verifyCountdown.textContent = "Code expired";
+    verifyCountdown.classList.add("is-expired");
+    if (!verifyFlow.expired) {
+      verifyFlow.expired = true;
+      setVerifyStatus("That code has expired. Tap resend to get a fresh one.", "error");
+      syncVerifyCodeButton();
+    }
+  }
+
+  if (verifyFlow.busy) return;
+
+  if (resendLeft > 0) {
+    verifyResendBtn.disabled = true;
+    verifyResendBtn.textContent = "Resend in " + formatCountdown(resendLeft);
+  } else {
+    verifyResendBtn.disabled = false;
+    verifyResendBtn.textContent = "Resend code";
+  }
+}
+
+function startVerifyTicker() {
+  stopVerifyTicker();
+  updateVerifyTimers();
+  verifyFlow.tickHandle = window.setInterval(updateVerifyTimers, 500);
+}
+
+function stopVerifyTicker() {
+  if (verifyFlow.tickHandle) {
+    window.clearInterval(verifyFlow.tickHandle);
+    verifyFlow.tickHandle = null;
+  }
+}
+
+function openVerifyModal(options) {
+  const opts = options || {};
+  verifyFlow.onVerified = typeof opts.onVerified === "function" ? opts.onVerified : null;
+  verifyFlow.intent = opts.intent || "checkout";
+  verifyFlow.successText = opts.successText || "Number verified.";
+  verifyFlow.expired = false;
+  verifyFlow.expiryDeadline = 0;
+  verifyFlow.resendDeadline = 0;
+  verifyFlow.lastFocus = document.activeElement;
+
+  verifyIntro.textContent = opts.intro || VERIFY_INTRO_CHECKOUT;
+
+  const seed = opts.phone || authState.phone || verifyFlow.phone;
+  if (seed) verifyPhoneInput.value = toLocalGhanaPhone(seed);
+
+  setOtpValue("");
+  setVerifyStatus("", "");
+  showVerifyStep("phone");
+  stopVerifyTicker();
+  setVerifyBusy(false);
+
+  toggleCartDrawer(false);
+  verifyModalOverlay.classList.add("active");
+  verifyFlow.open = true;
+  syncVerifyPhoneButton();
+  window.setTimeout(() => {
+    if (verifyFlow.open) verifyPhoneInput.focus();
+  }, 80);
+  lucide.createIcons();
+}
+
+function closeVerifyModal(options) {
+  const opts = options || {};
+  verifyModalOverlay.classList.remove("active");
+  verifyFlow.open = false;
+  stopVerifyTicker();
+  setVerifyBusy(false);
+
+  const cancelled = opts.keepPending !== true;
+  if (cancelled) verifyFlow.onVerified = null;
+
+  if (opts.restoreFocus !== false && verifyFlow.lastFocus && verifyFlow.lastFocus.focus) {
+    verifyFlow.lastFocus.focus();
+  }
+  verifyFlow.lastFocus = null;
+
+  // Backing out of verification should land the customer back on their cart
+  // rather than on a bare page.
+  if (cancelled && verifyFlow.intent === "checkout" && cart.length) {
+    toggleCartDrawer(true);
+  }
+}
+
+function continueAfterVerification() {
+  const next = verifyFlow.onVerified;
+  verifyFlow.onVerified = null;
+  if (typeof next === "function") next();
+}
+
+// Any dead end in the OTP flow hands the customer straight back to the flow they
+// asked for, so a broken auth API can never cost the shop a sale.
+function abandonVerificationAndContinue() {
+  markAuthUnavailable();
+  closeVerifyModal({ keepPending: true, restoreFocus: false });
+  continueAfterVerification();
+}
+
+async function sendVerificationCode(isResend) {
+  if (verifyFlow.busy) return;
+  if (!verifyFlow.phone) return;
+
+  setVerifyBusy(true, isResend ? "resend" : "phone");
+  setVerifyStatus(isResend ? "Sending a new code…" : "Sending your code…", "info");
+
+  const res = isResend
+    ? await apiRequest(AUTH_API.resendOtp, { method: "POST", body: {} })
+    : await apiRequest(AUTH_API.requestOtp, { method: "POST", body: { phone: verifyFlow.phone } });
+
+  if (!res.reachable || !res.data || res.data.configured === false) {
+    abandonVerificationAndContinue();
+    return;
+  }
+
+  setVerifyBusy(false);
+  const data = res.data;
+
+  if (!data.ok) {
+    const retryAfter = Number(data.retryAfterSeconds);
+    if (retryAfter > 0) {
+      verifyFlow.resendDeadline = Date.now() + retryAfter * 1000;
+      updateVerifyTimers();
+    }
+    setVerifyStatus(data.error || "We could not send that code. Please try again.", "error");
+    // A resend can fail because the whole challenge is gone; step 1 is the only
+    // way out of that, so take the customer back rather than leaving them stuck.
+    if (isResend && data.expired) {
+      stopVerifyTicker();
+      verifyFlow.expired = false;
+      verifyFlow.expiryDeadline = 0;
+      setOtpValue("");
+      showVerifyStep("phone");
+      syncVerifyPhoneButton();
+      verifyPhoneInput.focus();
+    }
+    return;
+  }
+
+  verifyFlow.phone = data.phone || verifyFlow.phone;
+  verifyFlow.maskedPhone = data.maskedPhone || maskPhoneNumber(verifyFlow.phone);
+  verifyFlow.expiryDeadline = Date.now() + (Number(data.expiresInSeconds) || 300) * 1000;
+  verifyFlow.resendDeadline = Date.now() + (Number(data.resendInSeconds) || 30) * 1000;
+  verifyFlow.expired = false;
+
+  verifyMaskedPhone.textContent = verifyFlow.maskedPhone;
+  setOtpValue("");
+  showVerifyStep("code");
+  startVerifyTicker();
+  syncVerifyCodeButton();
+  setVerifyStatus(isResend ? "New code sent." : "Code sent by SMS. Enter it below.", "info");
+  window.setTimeout(() => {
+    if (verifyFlow.open && !verifyCodeForm.hidden) focusOtpBox(0);
+  }, 60);
+}
+
+async function submitVerificationCode() {
+  if (verifyFlow.busy) return;
+  const code = otpValue();
+  if (code.length !== verifyOtpBoxes.length) {
+    setVerifyStatus("Enter all 4 digits of the code.", "error");
+    return;
+  }
+
+  setVerifyBusy(true, "code");
+  setVerifyStatus("Checking your code…", "info");
+
+  const res = await apiRequest(AUTH_API.verifyOtp, { method: "POST", body: { code: code } });
+
+  if (!res.reachable || !res.data || res.data.configured === false) {
+    abandonVerificationAndContinue();
+    return;
+  }
+
+  setVerifyBusy(false);
+  const data = res.data;
+
+  if (!data.ok) {
+    setOtpValue("");
+    if (data.expired) {
+      verifyFlow.expired = true;
+      verifyFlow.expiryDeadline = Date.now();
+      setVerifyStatus(data.error || "That code has expired. Tap resend to get a fresh one.", "error");
+    } else {
+      let message = data.error || "That code is not correct.";
+      if (typeof data.attemptsLeft === "number") {
+        message += " " + data.attemptsLeft + (data.attemptsLeft === 1 ? " attempt" : " attempts") + " left.";
+      }
+      setVerifyStatus(message, "error");
+    }
+    verifyOtpGroup.classList.add("is-invalid");
+    window.setTimeout(() => verifyOtpGroup.classList.remove("is-invalid"), 600);
+    updateVerifyTimers();
+    syncVerifyCodeButton();
+    if (!verifyFlow.expired) focusOtpBox(0);
+    return;
+  }
+
+  authState.loaded = true;
+  authState.configured = true;
+  authState.authenticated = true;
+  authState.phone = data.phone || verifyFlow.phone;
+  authState.maskedPhone = data.maskedPhone || maskPhoneNumber(authState.phone);
+  authState.customer = data.customer || null;
+
+  stopVerifyTicker();
+  setVerifyStatus("", "");
+  verifySuccessText.textContent = verifyFlow.successText || "Number verified.";
+  showVerifyStep("success");
+  lucide.createIcons();
+
+  window.setTimeout(() => {
+    closeVerifyModal({ keepPending: true, restoreFocus: false });
+    continueAfterVerification();
+  }, 850);
+}
+
+// --- CHECKOUT GATE ---
+function startGatedCheckout(type) {
+  if (!cart.length) return;
+  if (checkoutGateBusy) return;
+  checkoutGateBusy = true;
+
+  requireVerifiedSession({
+    intent: "checkout",
+    intro: VERIFY_INTRO_CHECKOUT,
+    successText: type === "whatsapp"
+      ? "Number verified. Opening your WhatsApp order…"
+      : "Number verified. Opening secure checkout…",
+    onVerified: () => openCheckoutModal(type)
+  }).catch(() => {
+    // A gate that throws must still let the customer buy.
+    openCheckoutModal(type);
+  }).then(() => {
+    checkoutGateBusy = false;
+  });
+}
+
+function applyVerifiedCustomerToCheckoutForm() {
+  const phoneInput = document.getElementById("cust-phone");
+  if (!phoneInput) return;
+
+  if (authState.authenticated && authState.phone) {
+    phoneInput.value = authState.phone;
+    phoneInput.readOnly = true;
+    phoneInput.classList.add("is-verified");
+    if (custPhoneVerifiedBadge) custPhoneVerifiedBadge.hidden = false;
+  } else {
+    phoneInput.readOnly = false;
+    phoneInput.classList.remove("is-verified");
+    if (custPhoneVerifiedBadge) custPhoneVerifiedBadge.hidden = true;
+  }
+
+  const customer = authState.customer;
+  if (!customer) return;
+  [["cust-name", customer.name], ["cust-email", customer.email], ["cust-location", customer.location]]
+    .forEach(([id, value]) => {
+      const field = document.getElementById(id);
+      if (field && value && !field.value.trim()) field.value = value;
+    });
+}
+
+// --- ACCOUNT DRAWER (ORDERS, TRACKING, REORDER) ---
+const accountState = {
+  mode: "orders",
+  view: "list",
+  orders: null,
+  activeOrder: null,
+  lastFocus: null
+};
+
+const ORDER_STATUS_TONE = {
+  DELIVERED: "success",
+  COMPLETED: "success",
+  CONFIRMED: "success",
+  PAID: "success",
+  DISPATCHED: "info",
+  SHIPPED: "info",
+  PACKED: "info",
+  PENDING: "warn",
+  AWAITING_PAYMENT: "warn",
+  CANCELLED: "danger",
+  REFUNDED: "danger",
+  FAILED: "danger"
+};
+
+function orderStatusTone(status) {
+  const key = String(status || "").toUpperCase().replace(/[\s-]+/g, "_");
+  return ORDER_STATUS_TONE[key] || "info";
+}
+
+function prettifyStatus(status) {
+  const text = String(status || "Pending").replace(/[_-]+/g, " ").toLowerCase();
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
+
+function formatOrderDate(value, withTime) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (isNaN(date.getTime())) return String(value);
+  const dateText = date.toLocaleDateString("en-GH", { day: "numeric", month: "short", year: "numeric" });
+  if (!withTime) return dateText;
+  return dateText + ", " + date.toLocaleTimeString("en-GH", { hour: "2-digit", minute: "2-digit" });
+}
+
+function orderLines(order) {
+  return Array.isArray(order && order.items) ? order.items : [];
+}
+
+function orderItemCount(order) {
+  return orderLines(order).reduce((sum, line) => sum + (Number(line.qty) || 0), 0);
+}
+
+function requestAccountView(mode) {
+  requireVerifiedSession({
+    intent: "account",
+    intro: mode === "track" ? VERIFY_INTRO_TRACKING : VERIFY_INTRO_ORDERS,
+    successText: "Number verified. Loading your orders…",
+    onVerified: () => openAccountDrawer(mode)
+  });
+}
+
+function openAccountDrawer(mode) {
+  accountState.mode = mode === "track" ? "track" : "orders";
+  accountState.view = "list";
+  accountState.activeOrder = null;
+  accountState.lastFocus = document.activeElement;
+
+  toggleCartDrawer(false);
+  accountBackBtn.hidden = true;
+  accountDrawerTitle.textContent = accountState.mode === "track" ? "Track Order" : "My Purchases";
+  updateAccountSubtitle();
+  accountOverlayWrapper.classList.add("active");
+  window.setTimeout(() => {
+    if (accountOverlayWrapper.classList.contains("active")) closeAccountBtn.focus();
+  }, 80);
+
+  if (!authState.configured) {
+    renderAccountUnavailable();
+    return;
+  }
+  if (!authState.authenticated) {
+    renderAccountSignedOut();
+    return;
+  }
+  loadAccountOrders({ autoTrack: accountState.mode === "track" });
+}
+
+function closeAccountDrawer() {
+  accountOverlayWrapper.classList.remove("active");
+  if (accountState.lastFocus && accountState.lastFocus.focus) accountState.lastFocus.focus();
+  accountState.lastFocus = null;
+}
+
+function updateAccountSubtitle() {
+  if (authState.authenticated && authState.maskedPhone) {
+    accountDrawerSub.textContent = "Signed in as " + authState.maskedPhone;
+  } else {
+    accountDrawerSub.textContent = "";
+  }
+  accountDrawerFooter.hidden = !authState.authenticated;
+}
+
+function renderAccountSkeletons() {
+  accountDrawerBody.innerHTML = "<div class=\"account-skeleton-list\">" +
+    "<div class=\"account-skeleton-card\"></div>".repeat(3) +
+    "</div>";
+}
+
+function renderAccountNotice(icon, title, text, action) {
+  accountDrawerBody.innerHTML = `
+    <div class="account-empty">
+      <span class="account-empty-icon"><i data-lucide="${icon}"></i></span>
+      <h4 class="account-empty-title">${escapeHtml(title)}</h4>
+      <p class="account-empty-text">${escapeHtml(text)}</p>
+      ${action || ""}
+    </div>
+  `;
+  lucide.createIcons();
+}
+
+// Resets the drawer chrome so a notice never inherits the "Order Details" header.
+function resetAccountHeader() {
+  accountState.view = "list";
+  accountBackBtn.hidden = true;
+  accountDrawerTitle.textContent = accountState.mode === "track" ? "Track Order" : "My Purchases";
+}
+
+function renderAccountUnavailable() {
+  resetAccountHeader();
+  accountDrawerFooter.hidden = true;
+  renderAccountNotice(
+    "package",
+    "Order tracking is not live yet",
+    "We are still switching on self-service order history. Send us your name or receipt number on WhatsApp and we will tell you exactly where your delivery is.",
+    `<a class="account-btn-solid" href="https://wa.me/${WHATSAPP_PHONE}" target="_blank" rel="noreferrer">Ask us on WhatsApp</a>`
+  );
+}
+
+function renderAccountSignedOut() {
+  resetAccountHeader();
+  accountDrawerFooter.hidden = true;
+  renderAccountNotice(
+    "shield-check",
+    "Verify your number",
+    "Confirm the number you ordered with and your purchase history appears here.",
+    `<button type="button" class="account-btn-solid" id="account-verify-btn">Verify my number</button>`
+  );
+  const btn = document.getElementById("account-verify-btn");
+  if (btn) {
+    btn.addEventListener("click", () => {
+      closeAccountDrawer();
+      requestAccountView(accountState.mode);
+    });
+  }
+}
+
+async function loadAccountOrders(options) {
+  const opts = options || {};
+  renderAccountSkeletons();
+
+  const res = await apiRequest(AUTH_API.orders);
+
+  if (!res.reachable || !res.data) {
+    markAuthUnavailable();
+    updateAccountSubtitle();
+    renderAccountUnavailable();
+    return;
+  }
+
+  const data = res.data;
+
+  if (res.status === 401) {
+    authState.authenticated = false;
+    authState.customer = null;
+    updateAccountSubtitle();
+    renderAccountSignedOut();
+    return;
+  }
+  if (data.configured === false) {
+    markAuthUnavailable();
+    updateAccountSubtitle();
+    renderAccountUnavailable();
+    return;
+  }
+  if (!data.ok) {
+    renderAccountNotice("alert-triangle", "We could not load your orders", data.error || "Please try again in a moment.",
+      `<button type="button" class="account-btn-solid" id="account-retry-btn">Try again</button>`);
+    const retry = document.getElementById("account-retry-btn");
+    if (retry) retry.addEventListener("click", () => loadAccountOrders());
+    return;
+  }
+
+  accountState.orders = Array.isArray(data.orders) ? data.orders : [];
+
+  if (opts.autoTrack && accountState.orders.length) {
+    openAccountOrderDetail(accountState.orders[0].id);
+    return;
+  }
+  renderAccountOrders();
+}
+
+function renderAccountOrders() {
+  accountState.view = "list";
+  accountBackBtn.hidden = true;
+  accountDrawerTitle.textContent = accountState.mode === "track" ? "Track Order" : "My Purchases";
+  updateAccountSubtitle();
+
+  const orders = accountState.orders || [];
+  if (!orders.length) {
+    renderAccountNotice(
+      "shopping-bag",
+      "No orders yet",
+      "Once you check out, every order shows up here with its delivery progress.",
+      `<button type="button" class="account-btn-solid" id="account-browse-btn">Browse the vault</button>`
+    );
+    accountDrawerFooter.hidden = !authState.authenticated;
+    const browse = document.getElementById("account-browse-btn");
+    if (browse) {
+      browse.addEventListener("click", () => {
+        closeAccountDrawer();
+        const target = document.getElementById("catalog");
+        if (target) target.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+    return;
+  }
+
+  accountDrawerBody.innerHTML = orders.map((order) => {
+    const count = orderItemCount(order);
+    return `
+      <article class="account-order-card" data-order-id="${escapeHtml(order.id)}">
+        <div class="account-order-top">
+          <span class="account-order-receipt">${escapeHtml(order.receiptNo || order.id)}</span>
+          <span class="account-status-badge is-${orderStatusTone(order.status)}">${escapeHtml(prettifyStatus(order.status))}</span>
+        </div>
+        <p class="account-order-meta">
+          <span>${escapeHtml(formatOrderDate(order.createdAt))}</span>
+          <span class="account-meta-dot">•</span>
+          <span>${count} ${count === 1 ? "item" : "items"}</span>
+          ${order.paymentMethod ? `<span class="account-meta-dot">•</span><span>${escapeHtml(order.paymentMethod)}</span>` : ""}
+        </p>
+        <div class="account-order-bottom">
+          <span class="account-order-total">${escapeHtml(formatGhs(order.total, 2))}</span>
+          <div class="account-order-actions">
+            <button type="button" class="account-btn-ghost" data-action="view" data-order-id="${escapeHtml(order.id)}">Details &amp; tracking</button>
+            <button type="button" class="account-btn-solid" data-action="reorder" data-order-id="${escapeHtml(order.id)}">Reorder</button>
+          </div>
+        </div>
+      </article>
+    `;
+  }).join("");
+
+  bindAccountOrderActions();
+}
+
+function bindAccountOrderActions() {
+  accountDrawerBody.querySelectorAll("[data-action]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const id = btn.getAttribute("data-order-id");
+      if (btn.getAttribute("data-action") === "reorder") {
+        reorderFromOrderId(id);
+      } else {
+        openAccountOrderDetail(id);
+      }
+    });
+  });
+}
+
+async function openAccountOrderDetail(orderId) {
+  if (!orderId) return;
+  accountState.view = "detail";
+  accountBackBtn.hidden = false;
+  accountDrawerTitle.textContent = "Order Details";
+  renderAccountSkeletons();
+
+  const res = await apiRequest(AUTH_API.orders + "/" + encodeURIComponent(orderId));
+
+  if (!res.reachable || !res.data) {
+    markAuthUnavailable();
+    updateAccountSubtitle();
+    renderAccountUnavailable();
+    return;
+  }
+  if (res.status === 401) {
+    authState.authenticated = false;
+    authState.customer = null;
+    updateAccountSubtitle();
+    renderAccountSignedOut();
+    return;
+  }
+  // A guessed or foreign id must never render as somebody's order.
+  if (res.status === 404 || !res.data.ok || !res.data.order) {
+    renderAccountNotice("search-x", "Order not found", res.data.error || "We could not find that order on your number.",
+      `<button type="button" class="account-btn-solid" id="account-back-to-list">Back to my orders</button>`);
+    const back = document.getElementById("account-back-to-list");
+    if (back) back.addEventListener("click", () => renderAccountOrders());
+    return;
+  }
+
+  accountState.activeOrder = res.data.order;
+  renderAccountOrderDetail(res.data.order);
+}
+
+function renderAccountOrderDetail(order) {
+  const tracking = order.tracking || {};
+  const steps = Array.isArray(tracking.steps) ? tracking.steps : [];
+  const items = orderLines(order);
+
+  const metaBits = [formatOrderDate(order.createdAt, true), order.paymentMethod, order.customerLocation]
+    .filter(Boolean)
+    .map((bit) => escapeHtml(bit))
+    .join(" <span class=\"account-meta-dot\">•</span> ");
+
+  accountDrawerBody.innerHTML = `
+    <div class="account-detail">
+      <div class="account-detail-head">
+        <span class="account-order-receipt">${escapeHtml(order.receiptNo || order.id)}</span>
+        <span class="account-status-badge is-${orderStatusTone(tracking.status || order.status)}">${escapeHtml(prettifyStatus(tracking.status || order.status))}</span>
+      </div>
+      <p class="account-order-meta">${metaBits}</p>
+
+      ${steps.length ? `
+        <h4 class="account-section-title">Delivery tracking</h4>
+        <ol class="account-timeline">
+          ${steps.map((step) => `
+            <li class="account-timeline-step ${step.done ? "is-done" : "is-pending"}">
+              <span class="account-timeline-dot"></span>
+              <span class="account-timeline-label">${escapeHtml(step.label || step.key || "")}</span>
+              <span class="account-timeline-at">${step.at ? escapeHtml(formatOrderDate(step.at, true)) : (step.done ? "" : "Pending")}</span>
+            </li>
+          `).join("")}
+        </ol>
+      ` : ""}
+
+      <h4 class="account-section-title">Items</h4>
+      <ul class="account-line-items">
+        ${items.length ? items.map((line) => `
+          <li class="account-line-item">
+            <span class="account-line-name">${escapeHtml(line.productName || line.productId)}<span class="account-line-qty">× ${escapeHtml(line.qty)}</span></span>
+            <span class="account-line-total">${escapeHtml(formatGhs(line.lineTotal, 2))}</span>
+          </li>
+        `).join("") : `<li class="account-line-item"><span class="account-line-name">No line items recorded.</span></li>`}
+      </ul>
+
+      <div class="payment-summary account-detail-summary">
+        <div class="summary-row">
+          <span>Subtotal</span>
+          <span>${escapeHtml(formatGhs(order.subtotal === undefined || order.subtotal === null ? order.total : order.subtotal, 2))}</span>
+        </div>
+        <div class="summary-row">
+          <span>Total paid</span>
+          <span style="color: var(--accent-blue);">${escapeHtml(formatGhs(order.total, 2))}</span>
+        </div>
+      </div>
+
+      <button type="button" class="btn-modal-action verify account-detail-reorder" data-action="reorder" data-order-id="${escapeHtml(order.id)}">
+        <span>Reorder these items</span>
+      </button>
+    </div>
+  `;
+
+  bindAccountOrderActions();
+  lucide.createIcons();
+}
+
+function reorderFromOrderId(orderId) {
+  const order = (accountState.activeOrder && String(accountState.activeOrder.id) === String(orderId))
+    ? accountState.activeOrder
+    : (accountState.orders || []).find((o) => String(o.id) === String(orderId));
+  if (!order) return;
+  reorderFromOrder(order);
+}
+
+// Reorder goes through addToCart so stock rules, badges and persistence stay in
+// one place; anything gone from the catalogue is reported instead of silently lost.
+function reorderFromOrder(order) {
+  const lines = orderLines(order);
+  const unavailable = [];
+  const partial = [];
+  let addedTotal = 0;
+
+  lines.forEach((line) => {
+    const product = PRODUCTS.find((p) => p.id === line.productId);
+    const soldOut = !product || product.price <= 0 || product.outOfStock ||
+      (typeof product.stock === "number" && product.stock <= 0);
+    if (soldOut) {
+      unavailable.push(line.productName || line.productId);
+      return;
+    }
+
+    const wanted = Math.max(1, Number(line.qty) || 1);
+    let added = 0;
+    for (let i = 0; i < wanted; i++) {
+      const existing = cart.find((item) => item.product.id === product.id);
+      const nextQty = (existing ? existing.quantity : 0) + 1;
+      if (typeof product.stock === "number" && nextQty > product.stock) break;
+      addToCart(product.id);
+      added++;
+    }
+    addedTotal += added;
+    if (added < wanted) partial.push((line.productName || product.title) + " (" + added + " of " + wanted + ")");
+  });
+
+  const notes = [];
+  if (!addedTotal) {
+    notes.push("None of the items from this order are available right now.");
+  }
+  if (unavailable.length) notes.push("No longer available: " + unavailable.join(", ") + ".");
+  if (partial.length) notes.push("Limited stock: " + partial.join(", ") + ".");
+
+  closeAccountDrawer();
+  if (notes.length) alert("REORDER\n\n" + notes.join("\n"));
+  if (addedTotal) toggleCartDrawer(true);
+}
+
+async function handleAccountSignOut() {
+  accountSignoutBtn.disabled = true;
+  await apiRequest(AUTH_API.logout, { method: "POST", body: {} });
+  accountSignoutBtn.disabled = false;
+
+  authState.authenticated = false;
+  authState.phone = "";
+  authState.maskedPhone = "";
+  authState.customer = null;
+  accountState.orders = null;
+  accountState.activeOrder = null;
+
+  applyVerifiedCustomerToCheckoutForm();
+  closeAccountDrawer();
+}
+
+// --- VERIFICATION + ACCOUNT EVENT WIRING ---
+function setupAuthEventListeners() {
+  if (myPurchasesTrigger) myPurchasesTrigger.addEventListener("click", () => requestAccountView("orders"));
+  if (trackOrderTrigger) trackOrderTrigger.addEventListener("click", () => requestAccountView("track"));
+  if (accountTrigger) accountTrigger.addEventListener("click", () => requestAccountView("orders"));
+
+  closeVerifyModalBtn.addEventListener("click", () => closeVerifyModal());
+  verifyModalOverlay.addEventListener("click", (e) => {
+    if (e.target === verifyModalOverlay) closeVerifyModal();
+  });
+
+  verifyPhoneInput.addEventListener("input", syncVerifyPhoneButton);
+  verifyPhoneForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const normalized = normalizeGhanaPhone(verifyPhoneInput.value);
+    if (!normalized) {
+      setVerifyStatus("That does not look like a Ghana mobile number.", "error");
+      return;
+    }
+    verifyFlow.phone = normalized;
+    sendVerificationCode(false);
+  });
+
+  verifyCodeForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    submitVerificationCode();
+  });
+
+  verifyEditPhoneBtn.addEventListener("click", () => {
+    stopVerifyTicker();
+    verifyFlow.expired = false;
+    setOtpValue("");
+    setVerifyStatus("", "");
+    showVerifyStep("phone");
+    if (verifyFlow.phone) verifyPhoneInput.value = toLocalGhanaPhone(verifyFlow.phone);
+    syncVerifyPhoneButton();
+    verifyPhoneInput.focus();
+  });
+
+  verifyResendBtn.addEventListener("click", () => sendVerificationCode(true));
+
+  verifyOtpBoxes.forEach((box, index) => {
+    box.addEventListener("input", () => {
+      const typed = digitsOnly(box.value);
+      if (typed.length > 1) {
+        // Paste or SMS autofill landing in a single box: spread it across the group.
+        const chars = typed.slice(0, verifyOtpBoxes.length - index).split("");
+        chars.forEach((char, offset) => {
+          const target = verifyOtpBoxes[index + offset];
+          if (target) target.value = char;
+        });
+        focusOtpBox(index + chars.length);
+      } else {
+        box.value = typed;
+        if (typed) focusOtpBox(index + 1);
+      }
+      syncVerifyCodeButton();
+      if (!verifyCodeBtn.disabled && otpValue().length === verifyOtpBoxes.length) {
+        submitVerificationCode();
+      }
+    });
+
+    box.addEventListener("keydown", (e) => {
+      if (e.key === "Backspace" && !box.value && index > 0) {
+        e.preventDefault();
+        verifyOtpBoxes[index - 1].value = "";
+        focusOtpBox(index - 1);
+        syncVerifyCodeButton();
+      } else if (e.key === "ArrowLeft" && index > 0) {
+        e.preventDefault();
+        focusOtpBox(index - 1);
+      } else if (e.key === "ArrowRight" && index < verifyOtpBoxes.length - 1) {
+        e.preventDefault();
+        focusOtpBox(index + 1);
+      }
+    });
+
+    box.addEventListener("paste", (e) => {
+      const pasted = (e.clipboardData || window.clipboardData);
+      if (!pasted) return;
+      e.preventDefault();
+      setOtpValue(digitsOnly(pasted.getData("text")));
+      focusOtpBox(verifyOtpBoxes.length - 1);
+      syncVerifyCodeButton();
+      if (!verifyCodeBtn.disabled) submitVerificationCode();
+    });
+
+    box.addEventListener("focus", () => {
+      if (box.select) box.select();
+    });
+  });
+
+  closeAccountBtn.addEventListener("click", closeAccountDrawer);
+  accountOverlayWrapper.addEventListener("click", (e) => {
+    if (e.target === accountOverlayWrapper) closeAccountDrawer();
+  });
+  accountBackBtn.addEventListener("click", () => {
+    accountState.activeOrder = null;
+    renderAccountOrders();
+  });
+  accountSignoutBtn.addEventListener("click", handleAccountSignOut);
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") {
+      if (verifyFlow.open) {
+        closeVerifyModal();
+      } else if (accountOverlayWrapper.classList.contains("active")) {
+        closeAccountDrawer();
+      }
+      return;
+    }
+    if (e.key !== "Tab") return;
+    if (verifyFlow.open) {
+      trapOverlayFocus(verifyModalPanel, e);
+    } else if (accountOverlayWrapper.classList.contains("active")) {
+      trapOverlayFocus(accountDrawerPanel, e);
+    }
+  });
+}
+
+function trapOverlayFocus(container, event) {
+  if (!container) return;
+  const candidates = container.querySelectorAll(
+    'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+  );
+  const focusable = Array.prototype.filter.call(candidates, (el) => el.offsetParent !== null);
+  if (!focusable.length) return;
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
   }
 }
 

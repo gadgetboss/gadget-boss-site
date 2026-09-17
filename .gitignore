@@ -7,3 +7,6 @@ dist-types/
 crm.db
 crm.db-journal
 .gh-cli/
+
+# Local tooling (Supabase CLI binary)
+.tools/
