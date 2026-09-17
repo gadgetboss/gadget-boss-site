@@ -6,3 +6,4 @@ dist-types/
 *.log
 crm.db
 crm.db-journal
+.gh-cli/
