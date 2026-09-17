@@ -1,0 +1,16 @@
+.gh-cli
+.git
+node_modules
+crm.db
+*.log
+.env
+.env.local
+tests
+src
+docs
+scripts
+supabase
+package.json
+package-lock.json
+tsconfig.json
+vitest.config.ts
