@@ -27,6 +27,36 @@ const DEFAULT_USERS = [
 ];
 
 const EXPENSE_CATEGORIES = ['Rent', 'Utilities', 'Transport', 'Marketing', 'Salaries', 'Supplies', 'Maintenance', 'Other'];
+const STORE_CATEGORIES = ['Airpods', 'Chargers', 'Accessories', 'Playstation', 'Gaming', 'Controllers', 'Videography'];
+
+function compressImageFile(file) {
+  return new Promise((resolve, reject) => {
+    if (!file) return reject(new Error('No file'));
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      const max = 900;
+      let w = img.width;
+      let h = img.height;
+      if (w > max || h > max) {
+        const scale = max / Math.max(w, h);
+        w = Math.round(w * scale);
+        h = Math.round(h * scale);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL('image/jpeg', 0.82));
+    };
+    img.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error('Could not read image'));
+    };
+    img.src = url;
+  });
+}
 
 function canAccess(role, feature) {
   const r = (role || '').toLowerCase();
@@ -154,7 +184,7 @@ function applySaleStock(products, sales) {
 async function createInitialData() {
   let products = [];
   try {
-    const res = await fetch('./seed-products.json');
+    const res = await fetch('/pos/seed-products.json');
     products = await res.json();
   } catch (e) {
     console.error('Failed to load seed products', e);
@@ -1045,6 +1075,7 @@ function ProductsPage({ data, update, user }) {
   const [category, setCategory] = useState('All');
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
+  const [savedMsg, setSavedMsg] = useState('');
   const canEdit = canAccess(user.role, 'products.edit') || user.role === 'Admin' || user.role === 'Manager';
   const canDelete = user.role === 'Admin' || user.role === 'Manager';
 
@@ -1125,9 +1156,12 @@ function ProductsPage({ data, update, user }) {
         update({ ...data, products });
         if (Sync.publishCatalogue) Sync.publishCatalogue(products);
         setModal(null);
-        alert(product.websiteVisible !== false
-          ? 'Product saved and published to the online store.'
-          : 'Product saved (hidden from online store).');
+        const wasPrice = existing ? Number(existing.sellingPrice) : null;
+        setSavedMsg(product.websiteVisible === false
+          ? `${product.name} saved (hidden from the online store).`
+          : wasPrice != null && wasPrice !== product.sellingPrice
+            ? `${product.name} price updated to ${fmt(product.sellingPrice)} on the online store.`
+            : `${product.name} is live on the online store.`);
         return;
       } catch (err) {
         console.error(err);
@@ -1144,9 +1178,56 @@ function ProductsPage({ data, update, user }) {
     update({ ...data, products: nextProducts });
     if (Sync && Sync.publishCatalogue) Sync.publishCatalogue(nextProducts);
     setModal(null);
-    alert(product.websiteVisible !== false
-      ? 'Product saved. Open the online store (same browser) to see it.'
-      : 'Product saved (hidden from online store).');
+    const previous = data.products.find((p) => p.id === product.id);
+    const wasPrice = previous ? Number(previous.sellingPrice) : null;
+    setSavedMsg(product.websiteVisible === false
+      ? `${product.name} saved (hidden from the online store).`
+      : wasPrice != null && wasPrice !== product.sellingPrice
+        ? `${product.name} price updated to ${fmt(product.sellingPrice)} on the online store.`
+        : `${product.name} is live on the online store.`);
+  };
+
+  const toggleOnline = (p) => {
+    const nextProducts = data.products.map((x) => (
+      x.id === p.id ? { ...x, websiteVisible: p.websiteVisible === false } : x
+    ));
+    update({ ...data, products: nextProducts });
+    if (Sync && Sync.publishCatalogue) Sync.publishCatalogue(nextProducts);
+    const nowOnline = p.websiteVisible === false;
+    setSavedMsg(nowOnline
+      ? `${p.name} is now showing on the online store.`
+      : `${p.name} was hidden from the online store.`);
+  };
+
+  const updatePrice = async (p, raw) => {
+    const sellingPrice = Number(raw);
+    if (!Number.isFinite(sellingPrice) || sellingPrice < 0) return;
+    if (sellingPrice === Number(p.sellingPrice)) return;
+    const updated = { ...p, sellingPrice, oldPrice: Number(p.sellingPrice) || p.oldPrice };
+    if (syncEnabled()) {
+      try {
+        await Sync.upsertPosProduct(updated);
+      } catch (err) {
+        return alert('Could not update price in shared database.\n' + (err.message || err));
+      }
+    }
+    const nextProducts = data.products.map((x) => (x.id === p.id ? updated : x));
+    update({ ...data, products: nextProducts });
+    if (Sync && Sync.publishCatalogue) Sync.publishCatalogue(nextProducts);
+    setSavedMsg(p.websiteVisible === false
+      ? `${p.name} POS price set to ${fmt(sellingPrice)} (still hidden from the store).`
+      : `${p.name} is now ${fmt(sellingPrice)} on the online store.`);
+  };
+
+  const onPickPhoto = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    try {
+      const dataUrl = await compressImageFile(file);
+      setForm((f) => ({ ...f, image: dataUrl }));
+    } catch (err) {
+      alert('Could not read that photo. Try a JPG or PNG.');
+    }
   };
 
   const remove = (id) => {
@@ -1158,6 +1239,12 @@ function ProductsPage({ data, update, user }) {
 
   return (
     <div className="space-y-4">
+      {savedMsg && (
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+          <span>{savedMsg}</span>
+          <a href="/" target="_blank" rel="noreferrer" className="font-semibold text-accent underline">Open shop</a>
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
         <div className="flex flex-1 gap-2 flex-wrap">
           <input className={`${inputCls} max-w-xs`} placeholder="Search products…" value={search} onChange={e => setSearch(e.target.value)} />
@@ -1165,8 +1252,9 @@ function ProductsPage({ data, update, user }) {
             {categories.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
-        {canEdit && <Button onClick={openNew}><Icon name="Plus" size={16} /> Add Product</Button>}
+        {canEdit && <Button onClick={openNew}><Icon name="Plus" size={16} /> Add to store</Button>}
       </div>
+      <p className="text-xs text-slate-500">Add a product here with <strong>Show on online store</strong> checked — it appears on the shop as soon as you save.</p>
 
       <Card>
         <div className="overflow-x-auto">
@@ -1179,6 +1267,7 @@ function ProductsPage({ data, update, user }) {
                 <th className="px-4 py-3 text-right">Cost</th>
                 <th className="px-4 py-3 text-right">Price</th>
                 <th className="px-4 py-3 text-right">Qty</th>
+                <th className="px-4 py-3">Online</th>
                 <th className="px-4 py-3">Barcode</th>
                 {canEdit && <th className="px-4 py-3"></th>}
               </tr>
@@ -1198,11 +1287,39 @@ function ProductsPage({ data, update, user }) {
                     <td className="px-4 py-3 text-slate-500">{p.category}</td>
                     <td className="px-4 py-3 text-slate-500">{p.brand}</td>
                     <td className="px-4 py-3 text-right">{fmt(p.costPrice)}</td>
-                    <td className="px-4 py-3 text-right font-semibold">{fmt(p.sellingPrice)}</td>
+                    <td className="px-4 py-3 text-right">
+                      {canEdit ? (
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          className="w-[7.5rem] text-right font-semibold rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+                          defaultValue={p.sellingPrice}
+                          key={`${p.id}-${p.sellingPrice}`}
+                          onBlur={(e) => updatePrice(p, e.target.value)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                        />
+                      ) : (
+                        <span className="font-semibold">{fmt(p.sellingPrice)}</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-right">
                       <span className={`font-bold ${out ? 'text-red-600' : low ? 'text-amber-600' : ''}`}>{p.qty}</span>
                       {low && !out && <Badge tone="amber">Low</Badge>}
                       {out && <Badge tone="red">Out</Badge>}
+                    </td>
+                    <td className="px-4 py-3">
+                      {canEdit ? (
+                        <button
+                          type="button"
+                          onClick={() => toggleOnline(p)}
+                          className={`px-2 py-1 rounded-full text-xs font-semibold ${p.websiteVisible === false ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}`}
+                        >
+                          {p.websiteVisible === false ? 'Hidden' : 'On store'}
+                        </button>
+                      ) : (
+                        <Badge tone={p.websiteVisible === false ? 'slate' : 'green'}>{p.websiteVisible === false ? 'Hidden' : 'On store'}</Badge>
+                      )}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs text-slate-500">{p.barcode}</td>
                     {canEdit && (
@@ -1220,14 +1337,33 @@ function ProductsPage({ data, update, user }) {
         </div>
       </Card>
 
-      <Modal open={!!modal} onClose={() => setModal(null)} title={modal === 'new' ? 'Add Product' : 'Edit Product'}
-        footer={<><Button variant="secondary" onClick={() => setModal(null)}>Cancel</Button><Button onClick={save}>Save & publish</Button></>}>
+      <Modal open={!!modal} onClose={() => setModal(null)} title={modal === 'new' ? 'Add product to store' : 'Edit Product'}
+        footer={<><Button variant="secondary" onClick={() => setModal(null)}>Cancel</Button><Button onClick={save}>{form.websiteVisible === false ? 'Save' : 'Save & show online'}</Button></>}>
         <div className="grid sm:grid-cols-2 gap-3">
-          {['name','category','brand','barcode','image'].map(k => (
-            <Field key={k} label={k} className={k === 'name' || k === 'image' ? 'sm:col-span-2' : ''}>
-              <input className={inputCls} value={form[k] || ''} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} />
-            </Field>
-          ))}
+          <Field label="Product name" className="sm:col-span-2">
+            <input className={inputCls} value={form.name || ''} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="e.g. AirPods Pro 3" />
+          </Field>
+          <Field label="Category">
+            <select className={inputCls} value={form.category || 'Accessories'} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
+              {STORE_CATEGORIES.map((c) => <option key={c}>{c}</option>)}
+              {form.category && !STORE_CATEGORIES.includes(form.category) && <option>{form.category}</option>}
+            </select>
+          </Field>
+          <Field label="Brand">
+            <input className={inputCls} value={form.brand || ''} onChange={e => setForm(f => ({ ...f, brand: e.target.value }))} />
+          </Field>
+          <Field label="Barcode">
+            <input className={inputCls} value={form.barcode || ''} onChange={e => setForm(f => ({ ...f, barcode: e.target.value }))} />
+          </Field>
+          <Field label="Photo" className="sm:col-span-2">
+            <div className="flex items-center gap-3">
+              <img src={form.image || '../assets/logo.png'} alt="" className="w-14 h-14 rounded-xl object-contain bg-slate-50 border border-slate-200" onError={e => { e.target.src='../assets/logo.png'; }} />
+              <div className="flex-1 space-y-2">
+                <input type="file" accept="image/*" className="block w-full text-sm" onChange={onPickPhoto} />
+                <input className={inputCls} value={form.image && form.image.startsWith('data:') ? '' : (form.image || '')} onChange={e => setForm(f => ({ ...f, image: e.target.value }))} placeholder="or paste an image URL" />
+              </div>
+            </div>
+          </Field>
           <Field label="Short description / tagline" className="sm:col-span-2">
             <input className={inputCls} value={form.tagline || ''} onChange={e => setForm(f => ({ ...f, tagline: e.target.value }))} placeholder="Shown under the product name online" />
           </Field>
@@ -1236,7 +1372,7 @@ function ProductsPage({ data, update, user }) {
               <input type="number" className={inputCls} value={form[k] ?? 0} onChange={e => setForm(f => ({ ...f, [k]: e.target.value }))} />
             </Field>
           ))}
-          <label className="sm:col-span-2 flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 cursor-pointer">
+          <label className="sm:col-span-2 flex items-center gap-3 rounded-xl border border-accent/30 bg-blue-50 px-4 py-3 cursor-pointer">
             <input
               type="checkbox"
               className="w-4 h-4 accent-[#4277df]"
@@ -1245,7 +1381,7 @@ function ProductsPage({ data, update, user }) {
             />
             <span>
               <span className="block text-sm font-semibold text-slate-800">Show on online store</span>
-              <span className="block text-xs text-slate-500">When checked, this product appears on gadgetboss shop after you save.</span>
+              <span className="block text-xs text-slate-500">Leave this on. Saving publishes the product to gadgetboss shop.</span>
             </span>
           </label>
         </div>

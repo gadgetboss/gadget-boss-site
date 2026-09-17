@@ -4,7 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GadgetBoss POS</title>
-  <link rel="icon" href="../assets/logo.png" />
+  <base href="/pos/">
+  <link rel="icon" href="/assets/logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
@@ -71,7 +72,7 @@
   </style>
 </head>
 <body>
-  <div id="root"></div>
+  <div id="root" style="display:flex;align-items:center;justify-content:center;font-family:Outfit,sans-serif;color:#64748b;">Loading GadgetBoss POS…</div>
 
   <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
@@ -86,7 +87,7 @@
     };
   </script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
-  <script src="../dist/gadgetboss-sync.js"></script>
-  <script type="text/babel" src="app.jsx"></script>
+  <script src="/dist/gadgetboss-sync.js"></script>
+  <script type="text/babel" src="/pos/app.jsx"></script>
 </body>
 </html>
