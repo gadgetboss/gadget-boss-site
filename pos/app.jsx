@@ -270,8 +270,8 @@ function Icon({ name, size = 18, className = '' }) {
 
 /* ---------- Shared UI ---------- */
 function Button({ children, variant = 'primary', className = '', size = 'md', ...props }) {
-  const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed';
-  const sizes = { sm: 'px-3 py-1.5 text-xs', md: 'px-4 py-2.5 text-sm', lg: 'px-5 py-3 text-base' };
+  const base = 'inline-flex items-center justify-center gap-2 font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed min-h-[44px]';
+  const sizes = { sm: 'px-3 py-2 text-xs min-h-[40px]', md: 'px-4 py-2.5 text-sm', lg: 'px-5 py-3.5 text-base min-h-[48px]' };
   const variants = {
     primary: 'bg-accent hover:bg-accent-dim text-white shadow-soft',
     secondary: 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-50',
@@ -290,8 +290,8 @@ function Card({ children, className = '', title, action }) {
   return (
     <div className={`bg-white rounded-card shadow-card border border-slate-100 ${className}`}>
       {(title || action) && (
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h3 className="font-display font-semibold text-slate-800">{title}</h3>
+        <div className="flex items-center justify-between gap-3 px-4 sm:px-5 py-4 border-b border-slate-100">
+          <h3 className="font-display font-semibold text-slate-800 truncate">{title}</h3>
           {action}
         </div>
       )}
@@ -303,17 +303,17 @@ function Card({ children, className = '', title, action }) {
 function Modal({ open, onClose, title, children, wide, footer }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop no-print" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop no-print" onClick={onClose}>
       <div
-        className={`bg-white rounded-2xl shadow-xl w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} max-h-[90vh] flex flex-col`}
+        className={`bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} max-h-[92dvh] flex flex-col`}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h3 className="font-display font-semibold text-lg text-slate-800">{title}</h3>
-          <button onClick={onClose} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"><Icon name="X" size={18} /></button>
+        <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-slate-100">
+          <h3 className="font-display font-semibold text-lg text-slate-800 pr-2">{title}</h3>
+          <button onClick={onClose} className="p-2 min-w-[44px] min-h-[44px] rounded-lg hover:bg-slate-100 text-slate-500"><Icon name="X" size={18} /></button>
         </div>
-        <div className="p-5 overflow-y-auto scrollbar-thin flex-1">{children}</div>
-        {footer && <div className="px-5 py-4 border-t border-slate-100 flex justify-end gap-2">{footer}</div>}
+        <div className="p-4 sm:p-5 overflow-y-auto scrollbar-thin flex-1">{children}</div>
+        {footer && <div className="px-4 sm:px-5 py-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pb-[max(1rem,env(safe-area-inset-bottom))]">{footer}</div>}
       </div>
     </div>
   );
@@ -328,7 +328,7 @@ function Field({ label, children, className = '' }) {
   );
 }
 
-const inputCls = 'w-full px-3 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400';
+const inputCls = 'w-full px-3 py-3 rounded-xl border border-slate-200 bg-white text-base text-slate-800 placeholder:text-slate-400 min-h-[44px]';
 
 function StatCard({ label, value, icon, tone = 'blue', sub }) {
   const tones = {
@@ -340,7 +340,7 @@ function StatCard({ label, value, icon, tone = 'blue', sub }) {
     slate: 'bg-slate-100 text-slate-600',
   };
   return (
-    <div className="bg-white rounded-card shadow-card border border-slate-100 p-5">
+    <div className="bg-white rounded-card shadow-card border border-slate-100 p-3 sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</p>
@@ -423,18 +423,22 @@ function LoginScreen({ onLogin, users }) {
   };
 
   return (
-    <div className="min-h-full flex items-center justify-center p-4 relative overflow-hidden"
-      style={{ background: 'linear-gradient(145deg, #0b1220 0%, #111827 45%, #1a2a4a 100%)' }}>
+    <div className="min-h-[100dvh] w-full flex items-center justify-center p-4 relative overflow-hidden"
+      style={{
+        background: 'linear-gradient(145deg, #0b1220 0%, #111827 45%, #1a2a4a 100%)',
+        paddingTop: 'max(1rem, env(safe-area-inset-top))',
+        paddingBottom: 'max(1rem, env(safe-area-inset-bottom))',
+      }}>
       <div className="absolute inset-0 opacity-30" style={{
         backgroundImage: 'radial-gradient(circle at 20% 20%, #4277df55 0%, transparent 40%), radial-gradient(circle at 80% 80%, #4277df33 0%, transparent 35%)'
       }} />
       <div className="relative w-full max-w-md">
         <div className="text-center mb-8">
-          <img src="../assets/logo.png" alt="GadgetBoss" className="w-16 h-16 mx-auto rounded-2xl object-cover shadow-lg mb-4" />
+          <img src="/assets/logo.png" alt="GadgetBoss" className="w-16 h-16 mx-auto rounded-2xl object-cover shadow-lg mb-4" />
           <h1 className="font-display text-3xl font-bold text-white tracking-tight">GadgetBoss</h1>
           <p className="text-slate-400 mt-1 text-sm">Point of Sale · Premium Retail</p>
         </div>
-        <form onSubmit={submit} className="bg-white rounded-2xl shadow-xl p-7 space-y-4">
+        <form onSubmit={submit} className="bg-white rounded-2xl shadow-xl p-5 sm:p-7 space-y-4">
           <div>
             <h2 className="font-display text-xl font-bold text-slate-900">Sign in</h2>
             <p className="text-sm text-slate-500 mt-1">Use your staff credentials to continue</p>
@@ -496,13 +500,13 @@ function Shell({ user, page, setPage, onLogout, settings, children, sidebarOpen,
   });
 
   return (
-    <div className="min-h-full flex bg-[#f3f5f9]">
+    <div className="h-full w-full flex bg-[#f3f5f9]">
       {sidebarOpen && (
         <div className="fixed inset-0 z-40 bg-black/40 lg:hidden no-print" onClick={() => setSidebarOpen(false)} />
       )}
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 bg-navy text-white flex flex-col transition-transform duration-300 no-print ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
-        <div className="px-5 py-5 border-b border-white/10 flex items-center gap-3">
-          <img src="../assets/logo.png" alt="" className="w-10 h-10 rounded-xl object-cover" />
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-[min(18rem,86vw)] bg-navy text-white flex flex-col transition-transform duration-300 no-print ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}>
+        <div className="px-5 py-5 border-b border-white/10 flex items-center gap-3" style={{ paddingTop: 'max(1.25rem, env(safe-area-inset-top))' }}>
+          <img src="/assets/logo.png" alt="" className="w-10 h-10 rounded-xl object-cover" />
           <div>
             <div className="font-display font-bold text-lg leading-tight">{settings.businessName || 'GadgetBoss'}</div>
             <div className="text-[11px] text-slate-400 tracking-wide">POS SYSTEM</div>
@@ -513,7 +517,7 @@ function Shell({ user, page, setPage, onLogout, settings, children, sidebarOpen,
             <button
               key={item.id}
               onClick={() => { setPage(item.id); setSidebarOpen(false); }}
-              className={`nav-item w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium text-slate-300 ${page === item.id ? 'active' : ''}`}
+              className={`nav-item w-full flex items-center gap-3 px-3 py-3 min-h-[44px] rounded-xl text-sm font-medium text-slate-300 ${page === item.id ? 'active' : ''}`}
             >
               <Icon name={item.icon} size={18} />
               {item.label}
@@ -536,25 +540,39 @@ function Shell({ user, page, setPage, onLogout, settings, children, sidebarOpen,
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0 min-h-full">
-        <header className="sticky top-0 z-30 bg-navy-soft text-white border-b border-white/5 no-print">
-          <div className="flex items-center justify-between px-4 md:px-6 h-14">
-            <div className="flex items-center gap-3">
-              <button className="lg:hidden p-2 rounded-lg hover:bg-white/10" onClick={() => setSidebarOpen(true)}>
+      <div className="flex-1 flex flex-col min-w-0 min-h-0 h-full w-full">
+        <header className="pos-shell-header shrink-0 z-30 bg-navy-soft text-white border-b border-white/5 no-print" style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}>
+          <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 h-14">
+            <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+              <button className="lg:hidden p-2 min-w-[44px] min-h-[44px] rounded-lg hover:bg-white/10" onClick={() => setSidebarOpen(true)} aria-label="Open menu">
                 <Icon name="Menu" size={20} />
               </button>
-              <div>
-                <div className="font-display font-semibold text-sm md:text-base capitalize">{page === 'pos' ? 'POS Checkout' : page === 'cashup' ? 'Cash-up' : page}</div>
-                <div className="text-[11px] text-slate-400 hidden sm:block">{settings.location}</div>
+              <div className="min-w-0">
+                <div className="font-display font-semibold text-sm md:text-base capitalize truncate">{page === 'pos' ? 'POS Checkout' : page === 'cashup' ? 'Cash-up' : page}</div>
+                <div className="text-[11px] text-slate-400 hidden sm:block truncate">{settings.location}</div>
               </div>
             </div>
-            <div className="flex items-center gap-3 text-sm text-slate-300">
+            <div className="flex items-center gap-2 sm:gap-3 text-sm text-slate-300 shrink-0">
               <span className="hidden md:inline">{new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>
               <Badge tone="blue">{user.role}</Badge>
             </div>
           </div>
         </header>
-        <main className="flex-1 p-4 md:p-6 overflow-x-hidden">{children}</main>
+        <main className="pos-shell-main flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 md:p-6 min-w-0 max-w-full">{children}</main>
+        <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-navy text-white border-t border-white/10 no-print" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+          <div className="grid grid-cols-4">
+            {items.filter((n) => ['dashboard', 'pos', 'products', 'transactions'].includes(n.id)).slice(0, 4).map((item) => (
+              <button
+                key={item.id}
+                onClick={() => { setPage(item.id); setSidebarOpen(false); }}
+                className={`flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px] text-[10px] font-semibold ${page === item.id ? 'text-white bg-white/10' : 'text-slate-400'}`}
+              >
+                <Icon name={item.icon} size={18} />
+                {item.id === 'pos' ? 'Checkout' : item.label}
+              </button>
+            ))}
+          </div>
+        </nav>
       </div>
     </div>
   );
@@ -729,7 +747,7 @@ function Dashboard({ data, user }) {
           <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
             {['daily','weekly','monthly'].map(m => (
               <button key={m} onClick={() => setChartMode(m)}
-                className={`px-3 py-1 rounded-lg text-xs font-semibold capitalize ${chartMode === m ? 'bg-white text-accent shadow-sm' : 'text-slate-500'}`}>
+                className={`px-3 py-2 min-h-[40px] rounded-lg text-xs font-semibold capitalize ${chartMode === m ? 'bg-white text-accent shadow-sm' : 'text-slate-500'}`}>
                 {m}
               </button>
             ))}
@@ -782,6 +800,7 @@ function POSPage({ data, update, user, settings }) {
   const [customerPhone, setCustomerPhone] = useState('');
   const [payment, setPayment] = useState('Cash');
   const [receiptSale, setReceiptSale] = useState(null);
+  const [cartOpen, setCartOpen] = useState(false);
   const barcodeRef = useRef(null);
 
   const products = data.products.filter(p => p.sellingPrice > 0 || p.qty > 0);
@@ -896,6 +915,7 @@ function POSPage({ data, update, user, settings }) {
         setCustomerName('');
         setCustomerPhone('');
         setReceiptSale(sales.find((s) => s.id === result.order_id) || sales[0] || null);
+        setCartOpen(false);
         return;
       } catch (err) {
         console.error(err);
@@ -942,12 +962,79 @@ function POSPage({ data, update, user, settings }) {
     setCustomerName('');
     setCustomerPhone('');
     setReceiptSale(sale);
+    setCartOpen(false);
   };
 
+  const cartPanel = (mobile = false) => (
+    <>
+      <div className="px-4 sm:px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
+        <h3 className="font-display font-semibold">Cart ({cart.length})</h3>
+        <div className="flex items-center gap-2">
+          {cart.length > 0 && <button className="text-xs text-red-500 font-semibold min-h-[44px] min-w-[44px] px-2" onClick={() => setCart([])}>Clear</button>}
+          {mobile && <button className="text-sm font-semibold text-accent min-h-[44px] min-w-[44px] px-2" onClick={() => setCartOpen(false)}>Done</button>}
+        </div>
+      </div>
+      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-3 min-h-0">
+        {lines.length === 0 && <EmptyState icon="ShoppingCart" text="Scan or tap products to add" />}
+        {lines.map(line => (
+          <div key={line.productId} className="bg-slate-50 rounded-xl p-3">
+            <div className="flex justify-between gap-2">
+              <div className="font-semibold text-sm text-slate-800 flex-1">{line.name}</div>
+              <button className="min-w-[44px] min-h-[44px]" onClick={() => setCart(c => c.filter(x => x.productId !== line.productId))} ><span className="text-slate-400 hover:text-red-500"><Icon name="Trash2" size={16} /></span></button>
+            </div>
+            <div className="flex items-center gap-2 mt-2">
+              <button className="w-11 h-11 rounded-lg bg-white border border-slate-200 font-bold text-lg" onClick={() => updateLine(line.productId, { qty: line.qty - 1 })}>−</button>
+              <span className="w-8 text-center text-sm font-bold">{line.qty}</span>
+              <button className="w-11 h-11 rounded-lg bg-white border border-slate-200 font-bold text-lg" onClick={() => updateLine(line.productId, { qty: line.qty + 1 })}>+</button>
+              <div className="ml-auto flex items-center gap-1">
+                <input type="number" min="0" max="100" className="w-16 px-2 py-2 rounded-lg border border-slate-200 text-sm min-h-[44px]"
+                  value={line.discountPct} onChange={e => updateLine(line.productId, { discountPct: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })} />
+                <span className="text-[10px] text-slate-400">% off</span>
+              </div>
+            </div>
+            <div className="text-right text-sm font-bold text-slate-800 mt-1">{fmt(line.lineTotal)}</div>
+          </div>
+        ))}
+      </div>
+      <div className="p-4 border-t border-slate-100 space-y-3 shrink-0">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <Field label="Customer name">
+            <input className={inputCls} value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Optional" />
+          </Field>
+          <Field label="Phone">
+            <input className={inputCls} value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="Optional" />
+          </Field>
+        </div>
+        <Field label="Order discount %">
+          <input type="number" min="0" max="100" className={inputCls} value={orderDiscount} onChange={e => setOrderDiscount(Math.min(100, Math.max(0, Number(e.target.value) || 0)))} />
+        </Field>
+        <div>
+          <span className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Payment</span>
+          <div className="grid grid-cols-3 gap-2">
+            {['Cash','MoMo','Card'].map(m => (
+              <button key={m} type="button" onClick={() => setPayment(m)}
+                className={`py-3 min-h-[44px] rounded-xl text-sm font-semibold border ${payment === m ? 'bg-accent text-white border-accent' : 'bg-white border-slate-200 text-slate-600'}`}>
+                {m}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div className="flex justify-between text-sm"><span className="text-slate-500">Subtotal</span><span className="font-semibold">{fmt(subtotal)}</span></div>
+        <div className="flex justify-between items-center">
+          <span className="font-display font-bold text-lg">Total</span>
+          <span className="font-display font-bold text-xl sm:text-2xl text-accent">{fmt(total)}</span>
+        </div>
+        <Button className="w-full" size="lg" onClick={completeSale} disabled={!lines.length}>
+          <Icon name="Check" size={18} /> Complete Sale
+        </Button>
+      </div>
+    </>
+  );
+
   return (
-    <div className="grid lg:grid-cols-5 gap-4 h-full">
+    <div className="pos-checkout grid lg:grid-cols-5 gap-4 lg:h-full">
       <div className="lg:col-span-3 space-y-4">
-        <Card className="p-4">
+        <Card className="p-3 sm:p-4">
           <div className="grid sm:grid-cols-2 gap-3">
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"><Icon name="Search" size={16} /></span>
@@ -967,7 +1054,7 @@ function POSPage({ data, update, user, settings }) {
           </div>
         </Card>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 max-h-[calc(100vh-220px)] overflow-y-auto scrollbar-thin pr-1">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 md:gap-3 lg:max-h-[calc(100vh-220px)] lg:overflow-y-auto scrollbar-thin pr-1">
           {filtered.map(p => {
             const low = p.qty <= (p.lowStockAt ?? 3);
             return (
@@ -975,14 +1062,14 @@ function POSPage({ data, update, user, settings }) {
                 key={p.id}
                 onClick={() => addToCart(p)}
                 disabled={p.qty <= 0}
-                className={`text-left bg-white rounded-card border shadow-soft overflow-hidden hover:border-accent/50 hover:shadow-card transition disabled:opacity-50 ${low && p.qty > 0 ? 'border-amber-300' : 'border-slate-100'}`}
+                className={`text-left bg-white rounded-card border shadow-soft overflow-hidden hover:border-accent/50 hover:shadow-card transition disabled:opacity-50 min-h-[44px] ${low && p.qty > 0 ? 'border-amber-300' : 'border-slate-100'}`}
               >
-                <div className="aspect-square bg-slate-50 flex items-center justify-center p-3">
+                <div className="aspect-square bg-slate-50 flex items-center justify-center p-2 sm:p-3">
                   <img src={p.image} alt="" className="max-h-full max-w-full object-contain" onError={e => { e.target.style.display='none'; }} />
                 </div>
-                <div className="p-3">
-                  <div className="text-xs font-semibold text-slate-800 line-clamp-2 min-h-[2.5rem]">{p.name}</div>
-                  <div className="flex items-center justify-between mt-2">
+                <div className="p-2.5 sm:p-3">
+                  <div className="text-xs font-semibold text-slate-800 line-clamp-2 min-h-[2.4rem]">{p.name}</div>
+                  <div className="flex items-center justify-between mt-2 gap-1">
                     <span className="font-display font-bold text-accent text-sm">{fmtInt(p.sellingPrice)}</span>
                     <span className={`text-[10px] font-bold ${p.qty <= 0 ? 'text-red-500' : low ? 'text-amber-600' : 'text-slate-400'}`}>{p.qty} left</span>
                   </div>
@@ -993,68 +1080,35 @@ function POSPage({ data, update, user, settings }) {
         </div>
       </div>
 
-      <div className="lg:col-span-2">
+      <div className="hidden lg:block lg:col-span-2">
         <Card className="sticky top-20 flex flex-col max-h-[calc(100vh-120px)]">
-          <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 className="font-display font-semibold">Cart ({cart.length})</h3>
-            {cart.length > 0 && <button className="text-xs text-red-500 font-semibold" onClick={() => setCart([])}>Clear</button>}
-          </div>
-          <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-3">
-            {lines.length === 0 && <EmptyState icon="ShoppingCart" text="Scan or tap products to add" />}
-            {lines.map(line => (
-              <div key={line.productId} className="bg-slate-50 rounded-xl p-3">
-                <div className="flex justify-between gap-2">
-                  <div className="font-semibold text-sm text-slate-800 flex-1">{line.name}</div>
-                  <button onClick={() => setCart(c => c.filter(x => x.productId !== line.productId))} className="text-slate-400 hover:text-red-500"><Icon name="Trash2" size={14} /></button>
-                </div>
-                <div className="flex items-center gap-2 mt-2">
-                  <button className="w-7 h-7 rounded-lg bg-white border border-slate-200 font-bold" onClick={() => updateLine(line.productId, { qty: line.qty - 1 })}>−</button>
-                  <span className="w-8 text-center text-sm font-bold">{line.qty}</span>
-                  <button className="w-7 h-7 rounded-lg bg-white border border-slate-200 font-bold" onClick={() => updateLine(line.productId, { qty: line.qty + 1 })}>+</button>
-                  <div className="ml-auto flex items-center gap-1">
-                    <input type="number" min="0" max="100" className="w-14 px-2 py-1 rounded-lg border border-slate-200 text-xs"
-                      value={line.discountPct} onChange={e => updateLine(line.productId, { discountPct: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })} />
-                    <span className="text-[10px] text-slate-400">% off</span>
-                  </div>
-                </div>
-                <div className="text-right text-sm font-bold text-slate-800 mt-1">{fmt(line.lineTotal)}</div>
-              </div>
-            ))}
-          </div>
-          <div className="p-4 border-t border-slate-100 space-y-3">
-            <div className="grid grid-cols-2 gap-2">
-              <Field label="Customer name">
-                <input className={inputCls} value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Optional" />
-              </Field>
-              <Field label="Phone">
-                <input className={inputCls} value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="Optional" />
-              </Field>
-            </div>
-            <Field label="Order discount %">
-              <input type="number" min="0" max="100" className={inputCls} value={orderDiscount} onChange={e => setOrderDiscount(Math.min(100, Math.max(0, Number(e.target.value) || 0)))} />
-            </Field>
-            <div>
-              <span className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Payment</span>
-              <div className="grid grid-cols-3 gap-2">
-                {['Cash','MoMo','Card'].map(m => (
-                  <button key={m} type="button" onClick={() => setPayment(m)}
-                    className={`py-2.5 rounded-xl text-sm font-semibold border ${payment === m ? 'bg-accent text-white border-accent' : 'bg-white border-slate-200 text-slate-600'}`}>
-                    {m}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div className="flex justify-between text-sm"><span className="text-slate-500">Subtotal</span><span className="font-semibold">{fmt(subtotal)}</span></div>
-            <div className="flex justify-between items-center">
-              <span className="font-display font-bold text-lg">Total</span>
-              <span className="font-display font-bold text-2xl text-accent">{fmt(total)}</span>
-            </div>
-            <Button className="w-full" size="lg" onClick={completeSale} disabled={!lines.length}>
-              <Icon name="Check" size={18} /> Complete Sale
-            </Button>
-          </div>
+          {cartPanel(false)}
         </Card>
       </div>
+
+      {cartOpen && (
+        <div className="lg:hidden fixed inset-0 z-50 no-print">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setCartOpen(false)} />
+          <div
+            className="absolute inset-x-0 bottom-0 max-h-[88dvh] bg-white rounded-t-2xl shadow-xl flex flex-col overflow-hidden"
+            style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+          >
+            {cartPanel(true)}
+          </div>
+        </div>
+      )}
+
+      {!cartOpen && (
+        <button
+          type="button"
+          className="lg:hidden fixed z-[35] left-3 right-3 rounded-2xl bg-navy text-white shadow-xl px-4 py-3 min-h-[52px] flex items-center justify-between gap-3 no-print"
+          style={{ bottom: 'calc(4.5rem + env(safe-area-inset-bottom))' }}
+          onClick={() => setCartOpen(true)}
+        >
+          <span className="font-semibold text-sm">Cart · {cart.length} item{cart.length === 1 ? '' : 's'}</span>
+          <span className="font-display font-bold text-accent-soft">{fmt(total)}</span>
+        </button>
+      )}
 
       <Modal open={!!receiptSale} onClose={() => setReceiptSale(null)} title="Sale Complete" wide
         footer={
@@ -1238,7 +1292,7 @@ function ProductsPage({ data, update, user }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 min-w-0">
       {savedMsg && (
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
           <span>{savedMsg}</span>
@@ -1247,7 +1301,7 @@ function ProductsPage({ data, update, user }) {
       )}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
         <div className="flex flex-1 gap-2 flex-wrap">
-          <input className={`${inputCls} max-w-xs`} placeholder="Search products…" value={search} onChange={e => setSearch(e.target.value)} />
+          <input className={`${inputCls} w-full sm:max-w-xs`} placeholder="Search products…" value={search} onChange={e => setSearch(e.target.value)} />
           <select className={`${inputCls} max-w-[180px]`} value={category} onChange={e => setCategory(e.target.value)}>
             {categories.map(c => <option key={c}>{c}</option>)}
           </select>
@@ -1256,19 +1310,19 @@ function ProductsPage({ data, update, user }) {
       </div>
       <p className="text-xs text-slate-500">Add a product here with <strong>Show on online store</strong> checked — it appears on the shop as soon as you save.</p>
 
-      <Card>
-        <div className="overflow-x-auto">
+      <Card className="min-w-0">
+        <div className="overflow-x-auto max-w-full">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-100">
                 <th className="px-4 py-3">Product</th>
-                <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Brand</th>
-                <th className="px-4 py-3 text-right">Cost</th>
+                <th className="px-4 py-3 hidden md:table-cell">Category</th>
+                <th className="px-4 py-3 hidden lg:table-cell">Brand</th>
+                <th className="px-4 py-3 text-right hidden lg:table-cell">Cost</th>
                 <th className="px-4 py-3 text-right">Price</th>
                 <th className="px-4 py-3 text-right">Qty</th>
-                <th className="px-4 py-3">Online</th>
-                <th className="px-4 py-3">Barcode</th>
+                <th className="px-4 py-3 hidden md:table-cell">Online</th>
+                <th className="px-4 py-3 hidden md:table-cell">Barcode</th>
                 {canEdit && <th className="px-4 py-3"></th>}
               </tr>
             </thead>
@@ -1281,19 +1335,19 @@ function ProductsPage({ data, update, user }) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <img src={p.image} alt="" className="w-10 h-10 rounded-lg object-contain bg-slate-50" onError={e => { e.target.src='../assets/logo.png'; }} />
-                        <span className="font-semibold text-slate-800">{p.name}</span>
+                        <span className="font-semibold text-slate-800 truncate max-w-[9.5rem] sm:max-w-none">{p.name}</span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-slate-500">{p.category}</td>
-                    <td className="px-4 py-3 text-slate-500">{p.brand}</td>
-                    <td className="px-4 py-3 text-right">{fmt(p.costPrice)}</td>
+                    <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{p.category}</td>
+                    <td className="px-4 py-3 text-slate-500 hidden lg:table-cell">{p.brand}</td>
+                    <td className="px-4 py-3 text-right hidden lg:table-cell">{fmt(p.costPrice)}</td>
                     <td className="px-4 py-3 text-right">
                       {canEdit ? (
                         <input
                           type="number"
                           min="0"
                           step="1"
-                          className="w-[7.5rem] text-right font-semibold rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+                          className="w-[6.5rem] sm:w-[7.5rem] text-right font-semibold rounded-lg border border-slate-200 px-2 py-2 text-base min-h-[44px]"
                           defaultValue={p.sellingPrice}
                           key={`${p.id}-${p.sellingPrice}`}
                           onBlur={(e) => updatePrice(p, e.target.value)}
@@ -1308,12 +1362,12 @@ function ProductsPage({ data, update, user }) {
                       {low && !out && <Badge tone="amber">Low</Badge>}
                       {out && <Badge tone="red">Out</Badge>}
                     </td>
-                    <td className="px-4 py-3">
+                    <td className="px-4 py-3 hidden md:table-cell">
                       {canEdit ? (
                         <button
                           type="button"
                           onClick={() => toggleOnline(p)}
-                          className={`px-2 py-1 rounded-full text-xs font-semibold ${p.websiteVisible === false ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}`}
+                          className={`min-h-[44px] px-3 py-2 rounded-full text-xs font-semibold ${p.websiteVisible === false ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}`}
                         >
                           {p.websiteVisible === false ? 'Hidden' : 'On store'}
                         </button>
@@ -1321,11 +1375,11 @@ function ProductsPage({ data, update, user }) {
                         <Badge tone={p.websiteVisible === false ? 'slate' : 'green'}>{p.websiteVisible === false ? 'Hidden' : 'On store'}</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-500">{p.barcode}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-500 hidden md:table-cell">{p.barcode}</td>
                     {canEdit && (
                       <td className="px-4 py-3 whitespace-nowrap">
-                        <button className="p-2 hover:bg-slate-100 rounded-lg" onClick={() => openEdit(p)}><Icon name="Pencil" size={14} /></button>
-                        {canDelete && <button className="p-2 hover:bg-red-50 text-red-500 rounded-lg" onClick={() => remove(p.id)}><Icon name="Trash2" size={14} /></button>}
+                        <button className="p-2 min-w-[44px] min-h-[44px] hover:bg-slate-100 rounded-lg" onClick={() => openEdit(p)} aria-label="Edit product"><Icon name="Pencil" size={14} /></button>
+                        {canDelete && <button className="p-2 min-w-[44px] min-h-[44px] hover:bg-red-50 text-red-500 rounded-lg" onClick={() => remove(p.id)} aria-label="Delete product"><Icon name="Trash2" size={14} /></button>}
                       </td>
                     )}
                   </tr>
@@ -1356,9 +1410,9 @@ function ProductsPage({ data, update, user }) {
             <input className={inputCls} value={form.barcode || ''} onChange={e => setForm(f => ({ ...f, barcode: e.target.value }))} />
           </Field>
           <Field label="Photo" className="sm:col-span-2">
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
               <img src={form.image || '../assets/logo.png'} alt="" className="w-14 h-14 rounded-xl object-contain bg-slate-50 border border-slate-200" onError={e => { e.target.src='../assets/logo.png'; }} />
-              <div className="flex-1 space-y-2">
+              <div className="flex-1 space-y-2 min-w-0">
                 <input type="file" accept="image/*" className="block w-full text-sm" onChange={onPickPhoto} />
                 <input className={inputCls} value={form.image && form.image.startsWith('data:') ? '' : (form.image || '')} onChange={e => setForm(f => ({ ...f, image: e.target.value }))} placeholder="or paste an image URL" />
               </div>
@@ -1440,15 +1494,15 @@ function TransactionsPage({ data, user, settings }) {
         </div>
       </Card>
 
-      <Card>
-        <div className="overflow-x-auto">
+      <Card className="min-w-0">
+        <div className="overflow-x-auto max-w-full">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-400 border-b border-slate-100">
                 <th className="px-4 py-3">Receipt</th>
                 <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Cashier</th>
-                <th className="px-4 py-3">Type</th>
+                <th className="px-4 py-3 hidden md:table-cell">Cashier</th>
+                <th className="px-4 py-3 hidden md:table-cell">Type</th>
                 <th className="px-4 py-3">Payment</th>
                 <th className="px-4 py-3 text-right">Total</th>
                 <th className="px-4 py-3"></th>
@@ -1458,11 +1512,11 @@ function TransactionsPage({ data, user, settings }) {
               {filtered.map(s => (
                 <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50/80">
                   <td className="px-4 py-3 font-mono text-xs font-semibold">{s.receiptNo}</td>
-                  <td className="px-4 py-3 text-slate-500">{new Date(s.createdAt).toLocaleString()}</td>
-                  <td className="px-4 py-3">{s.cashierName}</td>
-                  <td className="px-4 py-3"><Badge tone={s.saleType === 'POS' ? 'blue' : 'purple'}>{s.saleType}</Badge></td>
+                  <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{new Date(s.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 hidden md:table-cell">{s.cashierName}</td>
+                  <td className="px-4 py-3 hidden md:table-cell"><Badge tone={s.saleType === 'POS' ? 'blue' : 'purple'}>{s.saleType}</Badge></td>
                   <td className="px-4 py-3">{s.paymentMethod}</td>
-                  <td className="px-4 py-3 text-right font-bold">{fmt(s.total)}</td>
+                  <td className="px-4 py-3 text-right font-bold whitespace-nowrap">{fmt(s.total)}</td>
                   <td className="px-4 py-3"><Button size="sm" variant="secondary" onClick={() => setView(s)}>Receipt</Button></td>
                 </tr>
               ))}
@@ -1545,19 +1599,21 @@ function CustomersPage({ data, update }) {
 
       <Modal open={!!historyOf} onClose={() => setHistoryOf(null)} title={`History · ${historyOf?.name || ''}`} wide>
         {history.length === 0 ? <EmptyState text="No purchases yet" /> : (
+          <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead><tr className="text-left text-xs text-slate-400 border-b"><th className="py-2">Receipt</th><th>Date</th><th>Payment</th><th className="text-right">Total</th></tr></thead>
+            <thead><tr className="text-left text-xs text-slate-400 border-b"><th className="py-2">Receipt</th><th>Date</th><th className="hidden sm:table-cell">Payment</th><th className="text-right">Total</th></tr></thead>
             <tbody>
               {history.map(s => (
                 <tr key={s.id} className="border-b border-slate-50">
                   <td className="py-2 font-mono text-xs">{s.receiptNo}</td>
                   <td>{new Date(s.createdAt).toLocaleDateString()}</td>
-                  <td>{s.paymentMethod}</td>
+                  <td className="hidden sm:table-cell">{s.paymentMethod}</td>
                   <td className="text-right font-bold">{fmt(s.total)}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </Modal>
     </div>
@@ -1662,16 +1718,16 @@ function SuppliersPage({ data, update, user }) {
       )}
 
       {tab === 'purchases' && (
-        <Card>
-          <div className="overflow-x-auto">
+        <Card className="min-w-0">
+          <div className="overflow-x-auto max-w-full">
             <table className="w-full text-sm">
               <thead>
                 <tr className="text-left text-xs uppercase text-slate-400 border-b">
                   <th className="px-4 py-3">Date</th>
                   <th className="px-4 py-3">Supplier</th>
-                  <th className="px-4 py-3">Items</th>
+                  <th className="px-4 py-3 hidden md:table-cell">Items</th>
                   <th className="px-4 py-3 text-right">Total</th>
-                  <th className="px-4 py-3">Note</th>
+                  <th className="px-4 py-3 hidden lg:table-cell">Note</th>
                 </tr>
               </thead>
               <tbody>
@@ -1679,9 +1735,9 @@ function SuppliersPage({ data, update, user }) {
                   <tr key={p.id} className="border-b border-slate-50">
                     <td className="px-4 py-3">{p.date}</td>
                     <td className="px-4 py-3 font-semibold">{p.supplierName}</td>
-                    <td className="px-4 py-3 text-slate-500">{p.items.map(i => `${i.name} ×${i.qty}`).join(', ')}</td>
+                    <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{p.items.map(i => `${i.name} ×${i.qty}`).join(', ')}</td>
                     <td className="px-4 py-3 text-right font-bold">{fmt(p.total)}</td>
-                    <td className="px-4 py-3 text-slate-400 text-xs">{p.note}</td>
+                    <td className="px-4 py-3 text-slate-400 text-xs hidden lg:table-cell">{p.note}</td>
                   </tr>
                 ))}
               </tbody>
@@ -1797,15 +1853,15 @@ function ExpensesPage({ data, update, user }) {
         </div>
       </div>
 
-      <Card>
-        <div className="overflow-x-auto">
+      <Card className="min-w-0">
+        <div className="overflow-x-auto max-w-full">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase text-slate-400 border-b">
                 <th className="px-4 py-3">Date</th>
                 <th className="px-4 py-3">Category</th>
-                <th className="px-4 py-3">Note</th>
-                <th className="px-4 py-3">By</th>
+                <th className="px-4 py-3 hidden md:table-cell">Note</th>
+                <th className="px-4 py-3 hidden lg:table-cell">By</th>
                 <th className="px-4 py-3 text-right">Amount</th>
               </tr>
             </thead>
@@ -1814,8 +1870,8 @@ function ExpensesPage({ data, update, user }) {
                 <tr key={e.id} className="border-b border-slate-50">
                   <td className="px-4 py-3">{e.date}</td>
                   <td className="px-4 py-3"><Badge tone="amber">{e.category}</Badge></td>
-                  <td className="px-4 py-3 text-slate-500">{e.note}</td>
-                  <td className="px-4 py-3 text-slate-400">{e.recordedBy}</td>
+                  <td className="px-4 py-3 text-slate-500 hidden md:table-cell">{e.note}</td>
+                  <td className="px-4 py-3 text-slate-400 hidden lg:table-cell">{e.recordedBy}</td>
                   <td className="px-4 py-3 text-right font-bold">{fmt(e.amount)}</td>
                 </tr>
               ))}
@@ -1892,7 +1948,7 @@ function CashupPage({ data, update, user }) {
         <Field label="Date">
           <input type="date" className={inputCls} value={date} onChange={e => setDate(e.target.value)} />
         </Field>
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           {['Cash','MoMo','Card'].map(m => (
             <div key={m} className="bg-slate-50 rounded-xl p-4 text-center">
               <div className="text-[10px] uppercase font-bold text-slate-400">{m} sales</div>

@@ -18,6 +18,7 @@ STATIC_FILE_EXTENSIONS = {".css", ".html", ".ico", ".jpg", ".jpeg", ".js", ".jsx
 CRM_ADMIN_USER = os.environ.get("GADGETBOSS_CRM_USER")
 CRM_ADMIN_PASSWORD = os.environ.get("GADGETBOSS_CRM_PASSWORD")
 ALLOWED_ORIGIN = os.environ.get("GADGETBOSS_ALLOWED_ORIGIN")
+PAYSTACK_SECRET_KEY = os.environ.get("PAYSTACK_SECRET_KEY", "").strip()
 
 def init_db():
     conn = sqlite3.connect(DB_FILE)
@@ -359,12 +360,73 @@ class DynamicCRMServer(SimpleHTTPRequestHandler):
             self.send_error(404, "Static file not found.")
             
     def do_POST(self):
-        if self._request_path().startswith("/api/crm/"):
+        request_path = self._request_path()
+        if request_path in {"/api/paystack/verify", "/api/paystack-verify"}:
+            self.handle_paystack_verify()
+            return
+        if request_path.startswith("/api/crm/"):
             if not self._require_admin():
                 return
             self.handle_api_post()
         else:
             self.send_error(404, "Endpoint not found.")
+
+    def handle_paystack_verify(self):
+        try:
+            content_length = int(self.headers.get("Content-Length", 0))
+            post_data = self.rfile.read(content_length).decode("utf-8")
+            data = json.loads(post_data) if post_data else {}
+        except (TypeError, ValueError, json.JSONDecodeError):
+            self.send_json_response({"verified": False, "error": "Invalid JSON"}, status=400)
+            return
+
+        if not PAYSTACK_SECRET_KEY:
+            self.send_json_response({"configured": False, "verified": False})
+            return
+
+        reference = str(data.get("reference") or "").strip()
+        expected_amount = data.get("amount")
+        if not reference:
+            self.send_json_response({"verified": False, "error": "Missing reference"}, status=400)
+            return
+
+        req = urllib.request.Request(
+            f"https://api.paystack.co/transaction/verify/{urllib.parse.quote(reference)}",
+            headers={"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"},
+            method="GET",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=20) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except urllib.error.HTTPError as err:
+            try:
+                payload = json.loads(err.read().decode("utf-8"))
+            except Exception:
+                self.send_json_response({"verified": False, "error": "Paystack verification failed"}, status=502)
+                return
+        except Exception:
+            self.send_json_response({"verified": False, "error": "Paystack verification failed"}, status=502)
+            return
+
+        tx = payload.get("data") or {}
+        paid = (
+            payload.get("status") is True
+            and tx.get("status") == "success"
+            and str(tx.get("currency") or "").upper() == "GHS"
+        )
+        amount_ok = expected_amount in (None, "") or int(tx.get("amount") or 0) == int(expected_amount)
+        verified = bool(paid and amount_ok)
+        self.send_json_response(
+            {
+                "configured": True,
+                "verified": verified,
+                "reference": reference,
+                "amount": tx.get("amount"),
+                "status": tx.get("status"),
+                "channel": tx.get("channel"),
+            },
+            status=200 if verified else 400,
+        )
             
     def handle_api_get(self):
         conn = sqlite3.connect(DB_FILE)

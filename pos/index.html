@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>GadgetBoss POS</title>
   <base href="/pos/">
   <link rel="icon" href="/assets/logo.png" />
@@ -40,7 +40,24 @@
       --accent: #4277df;
     }
     * { box-sizing: border-box; }
-    html, body, #root { height: 100%; margin: 0; }
+    html, body, #root {
+      height: 100%;
+      height: 100dvh;
+      margin: 0;
+      width: 100%;
+    }
+    body { overflow: hidden; }
+    #root { overflow: hidden; }
+    .pos-shell-header {
+      flex-shrink: 0;
+      position: relative;
+      top: auto;
+    }
+    .pos-shell-main {
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
       background: #f3f5f9;
@@ -58,6 +75,17 @@
     input, select, textarea { outline: none; }
     input:focus, select:focus, textarea:focus { border-color: #4277df; box-shadow: 0 0 0 3px rgba(66,119,223,0.15); }
     .chart-wrap { position: relative; height: 280px; }
+    html { -webkit-text-size-adjust: 100%; }
+    input, select, textarea { font-size: 16px; }
+    button, a { touch-action: manipulation; }
+    @media (min-width: 1024px) {
+      .chart-wrap { height: 320px; }
+    }
+    @media (max-width: 1023px) {
+      .chart-wrap { height: 220px; }
+      main { padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important; }
+      .pos-checkout { padding-bottom: calc(5.25rem + env(safe-area-inset-bottom)); }
+    }
     @media print {
       body * { visibility: hidden !important; }
       #receipt-print, #receipt-print * { visibility: visible !important; }
@@ -72,7 +100,7 @@
   </style>
 </head>
 <body>
-  <div id="root" style="display:flex;align-items:center;justify-content:center;font-family:Outfit,sans-serif;color:#64748b;">Loading GadgetBoss POS…</div>
+  <div id="root">Loading GadgetBoss POS…</div>
 
   <script crossorigin src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>

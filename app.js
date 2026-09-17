@@ -326,6 +326,7 @@ const closeCartBtn = document.getElementById("close-cart-btn");
 const cartDrawerTrigger = document.getElementById("cart-drawer-trigger");
 
 const checkoutWhatsappBtn = document.getElementById("checkout-whatsapp-btn");
+const checkoutPaystackBtn = document.getElementById("checkout-paystack-btn");
 
 const checkoutModalOverlay = document.getElementById("checkout-modal-overlay");
 const closeCheckoutModalBtn = document.getElementById("close-checkout-modal-btn");
@@ -402,7 +403,10 @@ async function init() {
 
 async function hydrateCatalogueFromSupabase() {
   const Sync = window.GadgetBossSync;
-  const localById = Object.fromEntries(PRODUCTS.map((p) => [p.id, p]));
+  if (!window.__GB_CATALOGUE_SEED__) {
+    window.__GB_CATALOGUE_SEED__ = PRODUCTS.map((p) => ({ ...p, specs: { ...(p.specs || {}) } }));
+  }
+  const localById = Object.fromEntries(window.__GB_CATALOGUE_SEED__.map((p) => [p.id, p]));
 
   // 1) Supabase shared DB (when configured)
   if (Sync && Sync.isSyncConfigured()) {
@@ -428,18 +432,29 @@ async function hydrateCatalogueFromSupabase() {
 
   // 2) POS-published catalogue (same browser / origin) — works without Supabase
   if (Sync && Sync.loadPublishedCatalogue) {
-    const published = Sync.loadPublishedCatalogue().filter((p) => p.websiteVisible !== false);
+    const published = Sync.loadPublishedCatalogue();
     if (published.length) {
-      PRODUCTS = published.map((r) => {
+      published.forEach((r) => {
+        if (r.websiteVisible === false) {
+          delete localById[r.id];
+          return;
+        }
         const local = localById[r.id] || {};
-        return {
+        localById[r.id] = {
           ...local,
           ...r,
+          title: r.title || local.title,
+          price: Number(r.price),
+          stock: Number(r.stock),
+          image: r.image || local.image,
+          tagline: r.tagline || local.tagline,
+          category: r.category || local.category,
           rating: local.rating || r.rating || 4.8,
           reviewsCount: local.reviewsCount || 0,
-          specs: local.specs || r.specs || {},
+          specs: Object.keys(r.specs || {}).length ? r.specs : (local.specs || {}),
         };
       });
+      PRODUCTS = Object.values(localById);
     }
   }
 }
@@ -598,10 +613,12 @@ function setupEventListeners() {
 
   // Sticky Bar Trigger
   stickyCheckoutTrigger.addEventListener("click", () => {
-    toggleCartDrawer(true);
+    if (!cart.length) return;
+    openCheckoutModal("paystack");
   });
 
   // checkout actions
+  checkoutPaystackBtn.addEventListener("click", () => openCheckoutModal("paystack"));
   checkoutWhatsappBtn.addEventListener("click", () => openCheckoutModal("whatsapp"));
 
   closeCheckoutModalBtn.addEventListener("click", closeCheckoutModal);
@@ -1130,17 +1147,193 @@ function handleScroll() {
 }
 
 // --- CHECKOUT DETAILED MODAL CONTROLLERS ---
-function openCheckoutModal(type) {
-  if (cart.length === 0) return;
-  if (type !== "whatsapp") {
-    alert("Online payment is temporarily unavailable while secure Paystack verification is being configured. Please order via WhatsApp.");
+function getPaystackPublicKey() {
+  return (window.__GADGETBOSS_ENV__ && window.__GADGETBOSS_ENV__.PAYSTACK_PUBLIC_KEY) || "";
+}
+
+function paystackChannelsForProvider(provider) {
+  if (provider === "card") return ["card"];
+  if (provider === "mtn" || provider === "telecel" || provider === "airteltigo") return ["mobile_money"];
+  return ["card", "mobile_money"];
+}
+
+function paymentMethodForProvider(provider) {
+  return provider === "card" ? "Card" : "MoMo";
+}
+
+async function recordOnlineOrder({ name, email, phone, location, paymentMethod, status, idempotencyKey }) {
+  const Sync = window.GadgetBossSync;
+  if (!(Sync && Sync.isSyncConfigured())) {
+    return { ok: true, receiptNo: "" };
+  }
+  const result = await Sync.completeOrder({
+    idempotencyKey,
+    source: "ONLINE",
+    status,
+    paymentMethod,
+    customerName: name,
+    customerPhone: phone,
+    customerEmail: email,
+    customerLocation: location,
+    items: cart.map((item) => ({
+      productId: item.product.id,
+      qty: item.quantity,
+      unitPrice: item.product.price,
+      costPrice: item.product.costPrice || 0,
+    })),
+  });
+  if (!result.ok) {
+    const detail = (result.products || []).map((p) => `${p.name || p.product_id}: need ${p.requested}, have ${p.available}`).join("\n");
+    return {
+      ok: false,
+      error: result.error === "INSUFFICIENT_STOCK"
+        ? `Some items are no longer available:\n${detail}`
+        : (result.error || "Could not place order"),
+    };
+  }
+  return { ok: true, receiptNo: result.receipt_no || "" };
+}
+
+async function verifyPaystackPayment(reference, amountPesewas) {
+  const endpoints = ["/api/paystack/verify", "/api/paystack-verify"];
+  for (const url of endpoints) {
+    try {
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reference, amount: amountPesewas, currency: "GHS" }),
+      });
+      if (res.status === 404) continue;
+      const data = await res.json().catch(() => ({}));
+      if (data.configured === false) return { configured: false, verified: false };
+      if (data.verified) return { configured: true, verified: true, data };
+      if (res.ok === false || data.verified === false) {
+        return { configured: true, verified: false, error: data.error || "Payment could not be verified." };
+      }
+    } catch (err) {
+      continue;
+    }
+  }
+  return { configured: false, verified: false };
+}
+
+function startPaystackCheckout({ name, email, phone, location, provider, totalPrice }) {
+  const publicKey = getPaystackPublicKey();
+  if (!publicKey) {
+    alert("Paystack is not configured yet. Add your Paystack public key to window.__GADGETBOSS_ENV__.PAYSTACK_PUBLIC_KEY in index.html (Dashboard → Settings → API Keys).");
     return;
   }
-  
+  if (typeof PaystackPop === "undefined") {
+    alert("Paystack failed to load. Check your connection and try again.");
+    return;
+  }
+
+  const amountPesewas = Math.round(Number(totalPrice) * 100);
+  if (!(amountPesewas > 0)) {
+    alert("This cart total cannot be charged. Please order via WhatsApp for price-on-request items.");
+    return;
+  }
+
+  const reference = `GB-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+  const handler = PaystackPop.setup({
+    key: publicKey,
+    email,
+    amount: amountPesewas,
+    currency: "GHS",
+    ref: reference,
+    label: name,
+    channels: paystackChannelsForProvider(provider),
+    metadata: {
+      custom_fields: [
+        { display_name: "Customer", variable_name: "customer_name", value: name },
+        { display_name: "Phone", variable_name: "phone", value: phone },
+        { display_name: "Delivery", variable_name: "location", value: location },
+      ],
+    },
+    callback: function (response) {
+      finalizePaystackOrder({
+        name,
+        email,
+        phone,
+        location,
+        provider,
+        totalPrice,
+        amountPesewas,
+        reference: (response && response.reference) || reference,
+      });
+    },
+    onClose: function () {},
+  });
+  handler.openIframe();
+}
+
+async function finalizePaystackOrder({ name, email, phone, location, provider, totalPrice, amountPesewas, reference }) {
+  const verification = await verifyPaystackPayment(reference, amountPesewas);
+  if (verification.configured && !verification.verified) {
+    alert(verification.error || "Paystack payment was not verified. Your card/MoMo was not captured for this order.");
+    return;
+  }
+
+  const cartSnapshot = cart.map((item) => ({
+    product: { id: item.product.id, title: item.product.title, price: item.product.price },
+    quantity: item.quantity,
+  }));
+  localStorage.setItem("gadgetboss-last-checkout", JSON.stringify(cartSnapshot));
+
+  let receiptNo = "";
+  try {
+    const recorded = await recordOnlineOrder({
+      name,
+      email,
+      phone,
+      location,
+      paymentMethod: paymentMethodForProvider(provider),
+      status: "CONFIRMED",
+      idempotencyKey: `paystack-${reference}`,
+    });
+    if (!recorded.ok) {
+      alert(`${recorded.error}\n\nPayment reference: ${reference}\nPlease send this reference to GADGETBO$$ on WhatsApp so we can confirm your order.`);
+      return;
+    }
+    receiptNo = recorded.receiptNo;
+    cart = [];
+    saveCart();
+    renderCart();
+    await hydrateCatalogueFromSupabase();
+    renderProducts();
+  } catch (err) {
+    console.error(err);
+    alert(`Payment succeeded, but the order could not be saved automatically.\nPaystack ref: ${reference}\n${err.message || err}`);
+    return;
+  }
+
+  const totalPriceFormatted = new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", minimumFractionDigits: 0 }).format(totalPrice);
+  const notify = confirm(
+    `Payment received${receiptNo ? ` (order ${receiptNo})` : ""}.\nPaystack ref: ${reference}\nTotal: ${totalPriceFormatted}\n\nOpen WhatsApp to send the shop your receipt?`
+  );
+  if (notify) {
+    let messageText = `Hi GADGETBO$$,\n\nI have paid via Paystack.\n`;
+    if (receiptNo) messageText += `Order ref: ${receiptNo}\n`;
+    messageText += `Paystack ref: ${reference}\n`;
+    messageText += `Name: ${name}\nPhone: ${phone}\n`;
+    if (email) messageText += `Email: ${email}\n`;
+    messageText += `Location: ${location}\n\nItems:\n`;
+    cartSnapshot.forEach((item, idx) => {
+      const itemPrice = new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", minimumFractionDigits: 0 }).format(item.product.price * item.quantity);
+      messageText += `${idx + 1}. ${item.product.title} x ${item.quantity} — ${itemPrice}\n`;
+    });
+    messageText += `\nTotal: ${totalPriceFormatted}\nThank you.`;
+    window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(messageText)}`, "_blank");
+  }
+}
+
+// --- CHECKOUT DETAILED MODAL CONTROLLERS ---
+function openCheckoutModal(type) {
+  if (cart.length === 0) return;
+
   currentCheckoutType = type;
-  toggleCartDrawer(false); // Close cart panel
+  toggleCartDrawer(false);
   
-  // Format summary details
   const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
   const totalPrice = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
   const priceFormatted = new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', minimumFractionDigits: 0 }).format(totalPrice);
@@ -1148,25 +1341,24 @@ function openCheckoutModal(type) {
   summaryItemsCount.innerText = `${totalCount} ${totalCount === 1 ? 'item' : 'items'}`;
   summaryTotalPrice.innerText = priceFormatted;
 
-  // Custom styling based on checkout category
   const momoFields = document.getElementById("momo-fields-container");
   
   if (type === "whatsapp") {
-    checkoutModalTitle.innerText = "WhatsApp Order Credentials";
+    checkoutModalTitle.innerText = "WhatsApp Order Details";
     modalSubmitBtn.className = "btn-modal-action whatsapp";
     modalSubmitBtn.innerHTML = `
       <i data-lucide="message-square"></i>
-      <span>COMPILE WHATSAPP BILL</span>
+      <span>SEND WHATSAPP ORDER</span>
     `;
-    momoFields.style.display = "none"; // No MOMO networks choice needed on this form, WhatsApp direct setup handles
+    momoFields.style.display = "none";
   } else {
-    checkoutModalTitle.innerText = "Secure Paystack Credentials";
+    checkoutModalTitle.innerText = "Pay with Paystack";
     modalSubmitBtn.className = "btn-modal-action paystack";
     modalSubmitBtn.innerHTML = `
       <i data-lucide="credit-card"></i>
-      <span>INITIATE SECURE PAYMENTS</span>
+      <span>PAY NOW</span>
     `;
-    momoFields.style.display = "block"; // Choose MoMo provider
+    momoFields.style.display = "block";
   }
 
   checkoutModalOverlay.classList.add("active");
@@ -1196,8 +1388,13 @@ async function handleCheckoutSubmit(e) {
 
   closeCheckoutModal();
 
+  if (currentCheckoutType === "paystack") {
+    const provider = document.getElementById("cust-momo-provider").value || "all";
+    startPaystackCheckout({ name, email, phone, location, provider, totalPrice });
+    return;
+  }
+
   if (currentCheckoutType === "whatsapp") {
-    const Sync = window.GadgetBossSync;
     let receiptNo = '';
     const cartSnapshot = cart.map((item) => ({
       product: { id: item.product.id, title: item.product.title, price: item.product.price },
@@ -1205,46 +1402,34 @@ async function handleCheckoutSubmit(e) {
     }));
     localStorage.setItem('gadgetboss-last-checkout', JSON.stringify(cartSnapshot));
 
-    // Record ONLINE order + deduct stock atomically when Supabase is configured
-    if (Sync && Sync.isSyncConfigured()) {
-      try {
-        const idempotencyKey = `online-${(crypto.randomUUID && crypto.randomUUID()) || Date.now()}-${phone}`;
-        const result = await Sync.completeOrder({
-          idempotencyKey,
-          source: 'ONLINE',
-          status: 'PENDING',
-          paymentMethod: 'MoMo',
-          customerName: name,
-          customerPhone: phone,
-          customerEmail: email,
-          customerLocation: location,
-          items: cart.map((item) => ({
-            productId: item.product.id,
-            qty: item.quantity,
-            unitPrice: item.product.price,
-            costPrice: item.product.costPrice || 0,
-          })),
-        });
-        if (!result.ok) {
-          const detail = (result.products || []).map((p) => `${p.name || p.product_id}: need ${p.requested}, have ${p.available}`).join('\n');
-          alert(result.error === 'INSUFFICIENT_STOCK'
-            ? `Some items are no longer available:\n${detail}`
-            : (result.error || 'Could not place order'));
-          await hydrateCatalogueFromSupabase();
-          renderProducts();
-          return;
-        }
-        receiptNo = result.receipt_no || '';
+    try {
+      const recorded = await recordOnlineOrder({
+        name,
+        email,
+        phone,
+        location,
+        paymentMethod: 'MoMo',
+        status: 'PENDING',
+        idempotencyKey: `online-${(crypto.randomUUID && crypto.randomUUID()) || Date.now()}-${phone}`,
+      });
+      if (!recorded.ok) {
+        alert(recorded.error);
+        await hydrateCatalogueFromSupabase();
+        renderProducts();
+        return;
+      }
+      receiptNo = recorded.receiptNo;
+      if (receiptNo) {
         cart = [];
         saveCart();
         renderCart();
         await hydrateCatalogueFromSupabase();
         renderProducts();
-      } catch (err) {
-        console.error(err);
-        alert('Could not reserve stock for this order. Please try again.\n' + (err.message || err));
-        return;
       }
+    } catch (err) {
+      console.error(err);
+      alert('Could not reserve stock for this order. Please try again.\n' + (err.message || err));
+      return;
     }
 
     let messageText = `Hi GADGETBO$$,\n\n`;
@@ -1270,10 +1455,7 @@ async function handleCheckoutSubmit(e) {
     const whatsappUrl = `https://wa.me/${WHATSAPP_PHONE}?text=${encodedText}`;
 
     window.open(whatsappUrl, "_blank");
-    return;
   }
-
-  alert("Online card and mobile-money checkout is temporarily unavailable. Please use WhatsApp to request an order.");
 }
 
 // Start app

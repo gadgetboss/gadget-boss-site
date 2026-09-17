@@ -2,8 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>gadgetboss shop</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#070707">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>GADGETBOSS SHOP</title>
   <meta name="description" content="Enter the GADGETBO$$ vault. Ghana's premier outlet for authentic gadgets, custom gaming setups, and ultra-high-end tech with instant nationwide delivery.">
   
   <!-- Styling Design System -->
@@ -169,81 +171,6 @@
       </div>
     </section>
 
-    <!-- REVIEWS CAROUSEL -->
-    <section class="reviews-section" id="reviews">
-      <div class="reviews-container">
-        <div class="section-title-wrapper">
-          <span class="section-subtitle">Client Feedback</span>
-          <h2 class="section-title">VERIFIED BO$$ REVIEWS</h2>
-        </div>
-        
-        <div class="reviews-slider">
-          <!-- Card 1 -->
-          <div class="review-card">
-            <div class="review-header">
-              <div class="reviewer-profile">
-                <div class="reviewer-avatar">EA</div>
-                <div>
-                  <h4 class="reviewer-name">Emmanuel Ampofo</h4>
-                  <span class="reviewer-location">Accra, GH</span>
-                </div>
-              </div>
-              <span class="reviewer-verified">Verified Buyer</span>
-            </div>
-            <p class="review-text">
-              "Outstanding service! Ordered the PS5 Slim Cyber Edition. It was delivered to my house in East Legon within 2 hours of payment. GADGETBO$$ is definitely the absolute benchmark for gaming gear."
-            </p>
-            <div class="review-item-tag">
-              <i data-lucide="tag" style="width: 12px; height: 12px;"></i>
-              <span>PlayStation 5 Slim</span>
-            </div>
-          </div>
-
-          <!-- Card 2 -->
-          <div class="review-card">
-            <div class="review-header">
-              <div class="reviewer-profile">
-                <div class="reviewer-avatar">KO</div>
-                <div>
-                  <h4 class="reviewer-name">Kofi Owusu</h4>
-                  <span class="reviewer-location">Kumasi, GH</span>
-                </div>
-              </div>
-              <span class="reviewer-verified">Verified Buyer</span>
-            </div>
-            <p class="review-text">
-              "Was a bit nervous ordering online but Paystack payment was super smooth. The custom gold controller arrived in Kumasi under 48 hours. The build quality and packaging are insanely premium!"
-            </p>
-            <div class="review-item-tag">
-              <i data-lucide="tag" style="width: 12px; height: 12px;"></i>
-              <span>PS5 Custom Gold Controller</span>
-            </div>
-          </div>
-
-          <!-- Card 3 -->
-          <div class="review-card">
-            <div class="review-header">
-              <div class="reviewer-profile">
-                <div class="reviewer-avatar">SA</div>
-                <div>
-                  <h4 class="reviewer-name">Sandra Addo</h4>
-                  <span class="reviewer-location">Tema, GH</span>
-                </div>
-              </div>
-              <span class="reviewer-verified">Verified Buyer</span>
-            </div>
-            <p class="review-text">
-              "Got my AirPods Pro 3 from GADGETBO$$. The green background glowing design, case finish, and sound quality are flawless. Support team on WhatsApp kept me updated the whole time."
-            </p>
-            <div class="review-item-tag">
-              <i data-lucide="tag" style="width: 12px; height: 12px;"></i>
-              <span>AirPods Pro 3rd Gen</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- TRUST BADGES -->
     <section class="trust-badges">
       <div class="trust-container">
@@ -266,7 +193,7 @@
             <i data-lucide="lock"></i>
           </div>
           <h3 class="trust-title">Secure MOMO & Card Check</h3>
-          <p class="trust-desc">Checkout requests are handled through WhatsApp while verified payment processing is rebuilt.</p>
+          <p class="trust-desc">Pay securely with card or Mobile Money through Paystack, or send your order on WhatsApp.</p>
         </div>
       </div>
     </section>
@@ -306,7 +233,6 @@
         <ul class="footer-links">
           <li class="footer-link-item"><a href="#home">Home Base</a></li>
           <li class="footer-link-item"><a href="#catalog">Vault Drops</a></li>
-          <li class="footer-link-item"><a href="#reviews">Elite Reviews</a></li>
           <li class="footer-link-item"><a href="legal/faq.html">FAQ</a></li>
           <li class="footer-link-item"><a href="legal/contact.html">Contact</a></li>
         </ul>
@@ -370,12 +296,14 @@
         </div>
         
         <div class="cart-actions">
-          <!-- WhatsApp Order -->
-          <button class="btn-checkout-momo" id="checkout-whatsapp-btn">
+          <button class="btn-checkout-paystack" id="checkout-paystack-btn" type="button">
+            <i data-lucide="credit-card"></i>
+            <span>PAY WITH PAYSTACK</span>
+          </button>
+          <button class="btn-checkout-momo" id="checkout-whatsapp-btn" type="button">
             <i data-lucide="message-square"></i>
             <span>ORDER VIA WHATSAPP</span>
           </button>
-          
         </div>
       </div>
     </div>
@@ -415,10 +343,11 @@
         <div class="modal-form-group" id="momo-fields-container">
           <label class="modal-label" for="cust-momo-provider">Mobile Money Network</label>
           <select id="cust-momo-provider" class="modal-select">
+            <option value="all">Card or Mobile Money</option>
             <option value="mtn">MTN Mobile Money</option>
             <option value="telecel">Telecel Cash</option>
             <option value="airteltigo">AirtelTigo Money</option>
-            <option value="card">Debit/Credit Card (Paystack Direct)</option>
+            <option value="card">Debit / Credit Card</option>
           </select>
         </div>
         
@@ -491,9 +420,11 @@
   <script>
     window.__GADGETBOSS_ENV__ = window.__GADGETBOSS_ENV__ || {
       SUPABASE_URL: '',
-      SUPABASE_ANON_KEY: ''
+      SUPABASE_ANON_KEY: '',
+      PAYSTACK_PUBLIC_KEY: ''
     };
   </script>
+  <script src="https://js.paystack.co/v1/inline.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
   <script src="dist/gadgetboss-sync.js"></script>
   <script src="app.js"></script>
