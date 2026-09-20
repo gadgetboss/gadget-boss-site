@@ -230,11 +230,15 @@ function buildSeedSales(products, users) {
       total,
       customerName: opts.customerName || '',
       customerPhone: opts.customerPhone || '',
+      customerEmail: opts.customerEmail || '',
+      customerLocation: opts.customerLocation || '',
       customerId: opts.customerId || null,
       cashierId: opts.cashierId,
       cashierName: opts.cashierName,
       createdAt: opts.createdAt,
       cogs: items.reduce((s, i) => s + i.costPrice * i.qty, 0),
+      status: opts.status || (opts.saleType === 'Online' ? 'PENDING' : 'COMPLETED'),
+      notes: opts.notes || '',
     };
   };
 
@@ -256,6 +260,9 @@ function buildSeedSales(products, users) {
       receiptNo: 'GB-1003', saleType: 'Online', paymentMethod: 'Card',
       cashierId: manager.id, cashierName: manager.name,
       customerName: 'Ama Owusu', customerPhone: '0555987654',
+      customerEmail: 'ama@example.com', customerLocation: 'East Legon',
+      notes: 'Delivery GH₵40 · Core Accra',
+      status: 'PROCESSING',
       createdAt: daysAgo(1),
       items: [{ productId: picks[3]?.id || picks[0].id, qty: 1 }],
       orderDiscount: 5,
@@ -270,8 +277,31 @@ function buildSeedSales(products, users) {
       receiptNo: 'GB-1005', saleType: 'Online', paymentMethod: 'MoMo',
       cashierId: manager.id, cashierName: manager.name,
       customerName: 'Yaw Boateng', customerPhone: '0201112233',
+      customerEmail: 'yaw@example.com', customerLocation: 'Tema',
+      notes: 'Delivery GH₵70 · Tema / Kasoa',
+      status: 'PENDING',
       createdAt: daysAgo(3),
       items: [{ productId: picks[5]?.id || picks[0].id, qty: 1 }, { productId: picks[6]?.id || picks[0].id, qty: 1 }],
+    }),
+    makeSale({
+      receiptNo: 'GB-1007', saleType: 'Online', paymentMethod: 'MoMo',
+      cashierId: manager.id, cashierName: manager.name,
+      customerName: 'Efua Mensah', customerPhone: '0244001122',
+      customerEmail: 'efua@example.com', customerLocation: 'Osu',
+      notes: 'Delivery GH₵40 · Core Accra',
+      status: 'DISPATCHED',
+      createdAt: daysAgo(0),
+      items: [{ productId: picks[1]?.id || picks[0].id, qty: 2 }],
+    }),
+    makeSale({
+      receiptNo: 'GB-1008', saleType: 'Online', paymentMethod: 'Card',
+      cashierId: manager.id, cashierName: manager.name,
+      customerName: 'Kofi Asante', customerPhone: '0277112233',
+      customerEmail: 'kofi@example.com', customerLocation: 'Pickup at Tudu',
+      notes: 'Delivery GH₵0 · Pickup at Tudu',
+      status: 'DELIVERED',
+      createdAt: daysAgo(0),
+      items: [{ productId: picks[0].id, qty: 1 }],
     }),
     makeSale({
       receiptNo: 'GB-1006', saleType: 'POS', paymentMethod: 'Card',
@@ -415,17 +445,17 @@ function Card({ children, className = '', title, action }) {
 function Modal({ open, onClose, title, children, wide, footer }) {
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop no-print" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 modal-backdrop" onClick={onClose}>
       <div
         className={`bg-white rounded-t-2xl sm:rounded-2xl shadow-xl w-full ${wide ? 'max-w-3xl' : 'max-w-lg'} max-h-[92dvh] flex flex-col`}
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-slate-100">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-4 border-b border-slate-100 no-print">
           <h3 className="font-display font-semibold text-lg text-slate-800 pr-2">{title}</h3>
           <button onClick={onClose} className="p-2 min-w-[44px] min-h-[44px] rounded-lg hover:bg-slate-100 text-slate-500"><Icon name="X" size={18} /></button>
         </div>
         <div className="p-4 sm:p-5 overflow-y-auto scrollbar-thin flex-1">{children}</div>
-        {footer && <div className="px-4 sm:px-5 py-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pb-[max(1rem,env(safe-area-inset-bottom))]">{footer}</div>}
+        {footer && <div className="no-print px-4 sm:px-5 py-4 border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pb-[max(1rem,env(safe-area-inset-bottom))]">{footer}</div>}
       </div>
     </div>
   );
@@ -594,6 +624,7 @@ const NAV = [
   { id: 'pos', label: 'POS Checkout', icon: 'ShoppingCart', perm: 'pos' },
   { id: 'products', label: 'Products', icon: 'Package', perm: 'products.view' },
   { id: 'transactions', label: 'Transactions', icon: 'Receipt', perm: 'transactions' },
+  { id: 'online', label: 'Online Orders', icon: 'Globe', perm: 'transactions' },
   { id: 'customers', label: 'Customers', icon: 'Users', perm: 'customers' },
   { id: 'suppliers', label: 'Suppliers', icon: 'Truck', perm: 'suppliers' },
   { id: 'expenses', label: 'Expenses', icon: 'Wallet', perm: 'expenses' },
@@ -606,7 +637,7 @@ function Shell({ user, page, setPage, onLogout, settings, children, sidebarOpen,
   const role = user.role;
   const items = NAV.filter(n => {
     if (n.id === 'products') return canAccess(role, 'products.view') || canAccess(role, 'products') || canAccess(role, 'products.edit');
-    if (n.id === 'transactions') return canAccess(role, 'transactions') || canAccess(role, 'transactions.own');
+    if (n.id === 'transactions' || n.id === 'online') return canAccess(role, 'transactions') || canAccess(role, 'transactions.own');
     if (n.id === 'settings') return canAccess(role, 'settings') || role === 'Admin' || role === 'Manager';
     return canAccess(role, n.perm);
   });
@@ -660,7 +691,7 @@ function Shell({ user, page, setPage, onLogout, settings, children, sidebarOpen,
                 <Icon name="Menu" size={20} />
               </button>
               <div className="min-w-0">
-                <div className="font-display font-semibold text-sm md:text-base capitalize truncate">{page === 'pos' ? 'POS Checkout' : page === 'cashup' ? 'Cash-up' : page}</div>
+                <div className="font-display font-semibold text-sm md:text-base capitalize truncate">{page === 'pos' ? 'POS Checkout' : page === 'cashup' ? 'Cash-up' : page === 'online' ? 'Online Orders' : page}</div>
                 <div className="text-[11px] text-slate-400 hidden sm:block truncate">{settings.location}</div>
               </div>
             </div>
@@ -673,7 +704,7 @@ function Shell({ user, page, setPage, onLogout, settings, children, sidebarOpen,
         <main className="pos-shell-main flex-1 min-h-0 overflow-y-auto p-3 sm:p-4 md:p-6 min-w-0 max-w-full">{children}</main>
         <nav className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-navy text-white border-t border-white/10 no-print" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
           <div className="grid grid-cols-4">
-            {items.filter((n) => ['dashboard', 'pos', 'products', 'transactions'].includes(n.id)).slice(0, 4).map((item) => (
+            {items.filter((n) => ['dashboard', 'pos', 'online', 'products'].includes(n.id)).slice(0, 4).map((item) => (
               <button
                 key={item.id}
                 onClick={() => { setPage(item.id); setSidebarOpen(false); }}
@@ -690,50 +721,85 @@ function Shell({ user, page, setPage, onLogout, settings, children, sidebarOpen,
   );
 }
 
+function slipDate(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  const yyyy = d.getFullYear();
+  let h = d.getHours();
+  const min = String(d.getMinutes()).padStart(2, '0');
+  const ap = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+  return `${dd}-${mm}-${yyyy} ${h}:${min} ${ap}`;
+}
+
+function slipAmt(n) {
+  return Number(n || 0).toFixed(2);
+}
+
+function slipPhone(phone) {
+  const digits = String(phone || "").replace(/\D/g, "");
+  if (digits.length === 12 && digits.startsWith("233")) {
+    return `0${digits.slice(3, 5)} ${digits.slice(5, 8)} ${digits.slice(8)}`;
+  }
+  if (digits.length === 10 && digits.startsWith("0")) {
+    return `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6)}`;
+  }
+  return phone || "054 063 9091";
+}
+
 /* ---------- Receipt ---------- */
 function ReceiptView({ sale, settings }) {
   if (!sale) return null;
+  const name = settings.businessName || 'GadgetBoss';
+  const loc = settings.location || 'Tudu, beside Tobinco Pharmacy';
+  const phone = slipPhone(settings.phone);
   return (
-    <div id="receipt-print" className="font-jakarta text-sm text-slate-800 max-w-sm mx-auto">
-      <div className="text-center mb-4">
-        <div className="font-display text-xl font-bold">{settings.businessName}</div>
-        <div className="text-xs text-slate-500 mt-1">{settings.location}</div>
-        <div className="text-xs text-slate-500">{settings.phone}</div>
-        <div className="text-xs text-slate-400 mt-2">Receipt #{sale.receiptNo}</div>
+    <div id="receipt-print" className="thermal-slip">
+      <div className="thermal-slip-head">
+        <div className="thermal-slip-name">{name}</div>
+        <div>{loc}</div>
+        <div>Accra, Ghana</div>
+        <div>Tel: {phone}</div>
       </div>
-      <div className="border-t border-b border-dashed border-slate-300 py-2 text-xs space-y-1 mb-3">
-        <div className="flex justify-between"><span>Date</span><span>{new Date(sale.createdAt).toLocaleString()}</span></div>
-        <div className="flex justify-between"><span>Cashier</span><span>{sale.cashierName}</span></div>
-        <div className="flex justify-between"><span>Payment</span><span>{sale.paymentMethod}</span></div>
-        <div className="flex justify-between"><span>Type</span><span>{sale.saleType}</span></div>
-        {(sale.customerName || sale.customerPhone) && (
-          <div className="flex justify-between"><span>Customer</span><span>{sale.customerName} {sale.customerPhone}</span></div>
-        )}
+      <div className="thermal-slip-meta">
+        <div>Sales Receipt No. #{sale.receiptNo}</div>
+        <div>{sale.cashierName ? `${sale.cashierName} | ${slipDate(sale.createdAt)}` : slipDate(sale.createdAt)}</div>
+        {sale.customerName || sale.customerPhone ? (
+          <div>{[sale.customerName, sale.customerPhone].filter(Boolean).join(' · ')}</div>
+        ) : null}
       </div>
-      <table className="w-full text-xs mb-3">
+      <table className="thermal-slip-table">
         <thead>
-          <tr className="text-left text-slate-500 border-b border-slate-200">
-            <th className="py-1">Item</th>
-            <th className="py-1 text-center">Qty</th>
-            <th className="py-1 text-right">Amt</th>
+          <tr>
+            <th>#</th>
+            <th>Item</th>
+            <th>QTY</th>
+            <th>Price</th>
+            <th>Total</th>
           </tr>
         </thead>
         <tbody>
           {sale.items.map((it, i) => (
-            <tr key={i} className="border-b border-slate-100">
-              <td className="py-1.5 pr-2">{it.name}{it.discountPct ? ` (-${it.discountPct}%)` : ''}</td>
-              <td className="py-1.5 text-center">{it.qty}</td>
-              <td className="py-1.5 text-right whitespace-nowrap">{fmt(it.lineTotal)}</td>
+            <tr key={i}>
+              <td>{i + 1}</td>
+              <td>{it.name}{it.discountPct ? ` (-${it.discountPct}%)` : ''}</td>
+              <td>{it.qty}</td>
+              <td>{slipAmt(it.unitPrice != null ? it.unitPrice : (it.lineTotal / (it.qty || 1)))}</td>
+              <td>{slipAmt(it.lineTotal)}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <div className="space-y-1 text-xs">
-        <div className="flex justify-between"><span>Subtotal</span><span>{fmt(sale.subtotal)}</span></div>
-        {sale.orderDiscount > 0 && <div className="flex justify-between"><span>Discount ({sale.orderDiscount}%)</span><span>-{fmt(sale.subtotal - sale.total)}</span></div>}
-        <div className="flex justify-between font-bold text-base pt-2 border-t border-slate-300"><span>Total</span><span>{fmt(sale.total)}</span></div>
-      </div>
-      <p className="text-center text-xs text-slate-400 mt-6">Thank you for shopping at GadgetBoss!</p>
+      <div className="thermal-slip-rule" />
+      <div className="thermal-slip-row"><span>Subtotal</span><span>{slipAmt(sale.subtotal)}</span></div>
+      {sale.orderDiscount > 0 && (
+        <div className="thermal-slip-row"><span>Discount</span><span>-{slipAmt(sale.subtotal - sale.total)}</span></div>
+      )}
+      <div className="thermal-slip-row thermal-slip-grand"><span>Grand Total</span><span>GH₵{slipAmt(sale.total)}</span></div>
+      <div className="thermal-slip-row"><span>Paid</span><span>{sale.paymentMethod || ''}</span></div>
+      <p className="thermal-slip-thanks">Thank you</p>
     </div>
   );
 }
@@ -814,90 +880,105 @@ function SalesChart({ sales, mode }) {
   return <div className="chart-wrap"><canvas ref={canvasRef} /></div>;
 }
 
-function Dashboard({ data, user }) {
-  const [chartMode, setChartMode] = useState('daily');
-  const { sales, products, expenses, purchases } = data;
-  const role = user.role;
+const DASH_TONES = [
+  { card: 'bg-accent text-white', hint: 'text-white/80', icon: 'bg-white text-accent' },
+  { card: 'bg-navy text-white', hint: 'text-white/80', icon: 'bg-white text-navy' },
+  { card: 'bg-accent-dim text-white', hint: 'text-white/80', icon: 'bg-white text-accent-dim' },
+  { card: 'bg-navy-soft text-white', hint: 'text-white/80', icon: 'bg-white text-navy' },
+  { card: 'bg-white text-navy border border-slate-200', hint: 'text-slate-500', icon: 'bg-navy text-white' },
+];
 
-  const totalSales = sales.reduce((s, x) => s + x.total, 0);
-  const posSales = sales.filter(x => x.saleType === 'POS').reduce((s, x) => s + x.total, 0);
-  const onlineSales = sales.filter(x => x.saleType === 'Online').reduce((s, x) => s + x.total, 0);
-  const totalPurchases = purchases.reduce((s, x) => s + x.total, 0);
-  const totalExpenses = expenses.reduce((s, x) => s + x.amount, 0);
+function DashStatCard({ label, value, hint, icon, tone }) {
+  const palette = typeof tone === 'object' ? tone : DASH_TONES[0];
+  return (
+    <div className={`${palette.card} rounded-2xl p-5 sm:p-6 min-h-[140px] flex items-start justify-between gap-4 shadow-sm`}>
+      <div>
+        <div className="text-sm font-medium opacity-90">{label}</div>
+        <div className="font-display text-3xl sm:text-4xl font-bold mt-2 leading-none">{value}</div>
+        {hint ? <div className={`text-sm mt-3 ${palette.hint}`}>{hint}</div> : null}
+      </div>
+      <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${palette.icon}`}>
+        <Icon name={icon} size={20} />
+      </div>
+    </div>
+  );
+}
+
+function Dashboard({ data, user }) {
+  const [dateInput, setDateInput] = useState(todayISO());
+  const [reconDate, setReconDate] = useState(todayISO());
+  const { sales, products, users } = data;
+
   const stockUnits = products.reduce((s, p) => s + (p.qty || 0), 0);
   const stockValue = products.reduce((s, p) => s + (p.qty || 0) * (p.costPrice || 0), 0);
 
-  const todaySales = sales.filter(x => startOfDay(new Date(x.createdAt)).getTime() === startOfDay(new Date()).getTime());
-  const byCashier = {};
-  todaySales.forEach(s => {
-    const k = s.cashierName || 'Unknown';
-    if (!byCashier[k]) byCashier[k] = { count: 0, total: 0, Cash: 0, MoMo: 0, Card: 0 };
-    byCashier[k].count++;
-    byCashier[k].total += s.total;
-    byCashier[k][s.paymentMethod] = (byCashier[k][s.paymentMethod] || 0) + s.total;
-  });
-  const payTotals = { Cash: 0, MoMo: 0, Card: 0 };
-  todaySales.forEach(s => { payTotals[s.paymentMethod] = (payTotals[s.paymentMethod] || 0) + s.total; });
+  const daySales = sales.filter((sale) => (
+    startOfDay(new Date(sale.createdAt)).getTime() === startOfDay(new Date(reconDate)).getTime()
+  ));
 
-  const limited = role === 'Cashier';
+  const staff = (users || []).filter((u) => String(u.role).toLowerCase() === 'cashier');
+  const names = new Set(staff.map((u) => u.name));
+  daySales.forEach((sale) => {
+    if (sale.cashierName) names.add(sale.cashierName);
+  });
+  if (!names.size) {
+    (users || []).forEach((u) => names.add(u.name));
+  }
+
+  let cards = Array.from(names).map((name) => ({
+    name,
+    total: daySales.filter((sale) => (sale.cashierName || '') === name).reduce((sum, sale) => sum + Number(sale.total || 0), 0),
+  }));
+  if (user.role === 'Cashier') {
+    cards = cards.filter((card) => card.name === user.name);
+    if (!cards.length) cards = [{ name: user.name, total: 0 }];
+  }
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        <StatCard label="Total Sales" value={fmtInt(totalSales)} icon="TrendingUp" tone="blue" />
-        <StatCard label="POS Sales" value={fmtInt(posSales)} icon="Store" tone="green" />
-        {!limited && <StatCard label="Online Sales" value={fmtInt(onlineSales)} icon="Globe" tone="purple" />}
-        {!limited && <StatCard label="Purchases" value={fmtInt(totalPurchases)} icon="Truck" tone="amber" />}
-        {!limited && <StatCard label="Expenses" value={fmtInt(totalExpenses)} icon="Wallet" tone="rose" />}
-        <StatCard label="Stock Balance" value={stockUnits.toLocaleString() + ' units'} icon="Package" tone="slate" />
-        {!limited && <StatCard label="Stock Value" value={fmtInt(stockValue)} icon="Coins" tone="amber" sub="At cost" />}
-        {limited && <StatCard label="Today's Sales" value={fmtInt(todaySales.reduce((s,x)=>s+x.total,0))} icon="Calendar" tone="green" sub={`${todaySales.length} transactions`} />}
-      </div>
+    <div className="space-y-8">
+      <section>
+        <h2 className="font-display font-bold text-2xl text-slate-900 mb-4">Stocks</h2>
+        <div className="grid md:grid-cols-2 gap-4">
+          <DashStatCard
+            label="Stock Balance"
+            value={stockUnits.toLocaleString()}
+            hint="Stock Balance"
+            icon="Package"
+            tone={DASH_TONES[0]}
+          />
+          <DashStatCard
+            label="Total Stock Value"
+            value={stockValue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            hint="Stock Value"
+            icon="Coins"
+            tone={DASH_TONES[1]}
+          />
+        </div>
+      </section>
 
-      <div className="grid lg:grid-cols-5 gap-4">
-        <Card className="lg:col-span-3" title="Sales Overview" action={
-          <div className="flex gap-1 bg-slate-100 p-1 rounded-xl">
-            {['daily','weekly','monthly'].map(m => (
-              <button key={m} onClick={() => setChartMode(m)}
-                className={`px-3 py-2 min-h-[40px] rounded-lg text-xs font-semibold capitalize ${chartMode === m ? 'bg-white text-accent shadow-sm' : 'text-slate-500'}`}>
-                {m}
-              </button>
-            ))}
+      <section>
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
+          <h2 className="font-display font-bold text-xl sm:text-2xl text-slate-900">Cashier Daily Sales for Reconciliation</h2>
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-semibold text-slate-700">Date</span>
+            <input type="date" className={inputCls} style={{ width: 170, minHeight: 40, padding: '6px 10px' }} value={dateInput} onChange={(e) => setDateInput(e.target.value)} />
+            <Button size="sm" onClick={() => setReconDate(dateInput || todayISO())}>Filter</Button>
           </div>
-        }>
-          <div className="p-5"><SalesChart sales={sales} mode={chartMode} /></div>
-        </Card>
-
-        <Card className="lg:col-span-2" title="Cashier Reconciliation" action={<Badge tone="blue">Today</Badge>}>
-          <div className="p-5 space-y-4">
-            <div className="grid grid-cols-3 gap-2 text-center">
-              {['Cash','MoMo','Card'].map(m => (
-                <div key={m} className="bg-slate-50 rounded-xl p-3">
-                  <div className="text-[10px] uppercase font-bold text-slate-400">{m}</div>
-                  <div className="text-sm font-bold text-slate-800 mt-1">{fmtInt(payTotals[m])}</div>
-                </div>
-              ))}
-            </div>
-            <div className="bg-accent/10 rounded-xl p-3 flex justify-between items-center">
-              <span className="text-sm font-semibold text-slate-700">Expected drawer (cash)</span>
-              <span className="font-display font-bold text-accent">{fmt(payTotals.Cash)}</span>
-            </div>
-            <div className="space-y-2">
-              <p className="text-xs font-semibold text-slate-500 uppercase">By cashier</p>
-              {Object.keys(byCashier).length === 0 && <p className="text-sm text-slate-400">No sales yet today</p>}
-              {Object.entries(byCashier).map(([name, v]) => (
-                <div key={name} className="flex items-center justify-between text-sm py-2 border-b border-slate-100 last:border-0">
-                  <div>
-                    <div className="font-semibold text-slate-800">{name}</div>
-                    <div className="text-xs text-slate-400">{v.count} sales</div>
-                  </div>
-                  <div className="font-bold text-slate-800">{fmt(v.total)}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-        </Card>
-      </div>
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          {cards.map((card, index) => (
+            <DashStatCard
+              key={card.name}
+              label={card.name}
+              value={card.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              hint="Daily Sales Total"
+              icon="Wallet"
+              tone={DASH_TONES[index % DASH_TONES.length]}
+            />
+          ))}
+          {!cards.length && <p className="text-sm text-slate-400">No cashiers to show.</p>}
+        </div>
+      </section>
     </div>
   );
 }
@@ -1242,6 +1323,7 @@ function ProductsPage({ data, update, user }) {
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
   const [savedMsg, setSavedMsg] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(null);
   const canEdit = canAccess(user.role, 'products.edit') || user.role === 'Admin' || user.role === 'Manager';
   const canDelete = user.role === 'Admin' || user.role === 'Manager';
 
@@ -1402,10 +1484,16 @@ function ProductsPage({ data, update, user }) {
   };
 
   const remove = (id) => {
-    if (!confirm('Delete this product?')) return;
-    const nextProducts = data.products.filter(p => p.id !== id);
+    const product = data.products.find((p) => p.id === id);
+    setConfirmDelete(product || { id, name: 'this product' });
+  };
+
+  const confirmRemove = () => {
+    if (!confirmDelete) return;
+    const nextProducts = data.products.filter((p) => p.id !== confirmDelete.id);
     update({ ...data, products: nextProducts });
     if (Sync && Sync.publishCatalogue) Sync.publishCatalogue(nextProducts);
+    setConfirmDelete(null);
   };
 
   return (
@@ -1556,6 +1644,369 @@ function ProductsPage({ data, update, user }) {
             </span>
           </label>
         </div>
+      </Modal>
+
+      <Modal
+        open={!!confirmDelete}
+        onClose={() => setConfirmDelete(null)}
+        title="Are you sure?"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Cancel</Button>
+            <Button variant="danger" onClick={confirmRemove}>Yes, delete</Button>
+          </>
+        }
+      >
+        <p className="text-sm text-slate-600">
+          Delete <span className="font-semibold text-slate-900">{confirmDelete?.name || 'this product'}</span>? This removes it from POS and the shop.
+        </p>
+      </Modal>
+    </div>
+  );
+}
+
+function parseDeliveryNote(notes) {
+  const text = String(notes || '');
+  const feeMatch = text.match(/Delivery GH₵([\d.]+)/i);
+  const labelMatch = text.match(/Delivery GH₵[\d.]+\s*[·\-]\s*(.+)/i);
+  return {
+    fee: feeMatch ? Number(feeMatch[1]) : 0,
+    label: labelMatch ? String(labelMatch[1] || '').trim() : '',
+  };
+}
+
+function saleDelivery(sale) {
+  const parsed = parseDeliveryNote(sale && sale.notes);
+  if (parsed.fee > 0 || parsed.label) return parsed;
+  const itemsTotal = (sale.items || []).reduce((sum, it) => sum + Number(it.lineTotal || 0), 0);
+  const extra = Math.max(0, Number(sale.total || 0) - itemsTotal);
+  return { fee: extra, label: sale.customerLocation || '' };
+}
+
+function relativeTime(iso) {
+  const t = new Date(iso).getTime();
+  if (Number.isNaN(t)) return '';
+  const mins = Math.round((Date.now() - t) / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins} min ago`;
+  const hours = Math.round(mins / 60);
+  if (hours < 24) return `${hours} hour${hours === 1 ? '' : 's'} ago`;
+  const days = Math.round(hours / 24);
+  return `${days} day${days === 1 ? '' : 's'} ago`;
+}
+
+function onlineBucket(status) {
+  const key = String(status || 'PENDING').toUpperCase();
+  if (key === 'PENDING') return 'pending';
+  if (key === 'CONFIRMED' || key === 'PROCESSING') return 'processing';
+  if (key === 'DISPATCHED') return 'delivery';
+  if (key === 'DELIVERED' || key === 'COMPLETED') return 'delivered';
+  if (key === 'CANCELLED') return 'cancelled';
+  return 'pending';
+}
+
+function trackingLabel(status) {
+  const key = String(status || 'PENDING').toUpperCase();
+  if (key === 'DISPATCHED') return 'Out for delivery';
+  if (key === 'DELIVERED' || key === 'COMPLETED') return 'Delivered';
+  if (key === 'CANCELLED') return 'Cancelled';
+  if (key === 'PROCESSING') return 'Processing';
+  if (key === 'CONFIRMED') return 'Confirmed';
+  if (key === 'PENDING') return 'No tracking';
+  return key;
+}
+
+function paymentLabel(method) {
+  const key = String(method || '').toLowerCase();
+  if (key === 'momo') return 'Mobile Money';
+  if (key === 'card') return 'Card';
+  if (key === 'cash') return 'Cash';
+  return method || '—';
+}
+
+function isPaidStatus(status) {
+  const key = String(status || '').toUpperCase();
+  return key !== 'PENDING' && key !== 'CANCELLED';
+}
+
+function isSameDay(iso) {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return false;
+  const now = new Date();
+  return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+}
+
+function exportOnlineCsv(rows) {
+  const header = ['Order','Customer','Email','Phone','Items','Qty','Delivery','Location','Status','Total','Payment','Time'];
+  const lines = rows.map((sale) => {
+    const items = sale.items || [];
+    const qty = items.reduce((sum, it) => sum + Number(it.qty || 0), 0);
+    const delivery = saleDelivery(sale);
+    return [
+      sale.receiptNo || sale.id,
+      sale.customerName || '',
+      sale.customerEmail || '',
+      sale.customerPhone || '',
+      items.length,
+      qty,
+      delivery.fee,
+      sale.customerLocation || delivery.label,
+      sale.status || '',
+      slipAmt(sale.total),
+      sale.paymentMethod || '',
+      sale.createdAt || '',
+    ].map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(',');
+  });
+  const blob = new Blob([[header.join(','), ...lines].join('\n')], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `gadgetboss-online-orders-${todayISO()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+/* ---------- Online orders ---------- */
+function OnlineOrdersPage({ data, update, user, settings, onReload }) {
+  const [bucket, setBucket] = useState('all');
+  const [search, setSearch] = useState('');
+  const [pageSize, setPageSize] = useState(10);
+  const [view, setView] = useState(null);
+  const [printSale, setPrintSale] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const canManage = user.role === 'Admin' || user.role === 'Manager';
+
+  const onlineSales = (data.sales || []).filter((sale) => sale.saleType === 'Online' || sale.source === 'ONLINE');
+
+  const counts = {
+    pending: onlineSales.filter((sale) => onlineBucket(sale.status) === 'pending').length,
+    processing: onlineSales.filter((sale) => onlineBucket(sale.status) === 'processing').length,
+    deliveredToday: onlineSales.filter((sale) => onlineBucket(sale.status) === 'delivered' && isSameDay(sale.createdAt)).length,
+    cancelledToday: onlineSales.filter((sale) => onlineBucket(sale.status) === 'cancelled' && isSameDay(sale.createdAt)).length,
+  };
+
+  const filtered = onlineSales.filter((sale) => {
+    if (bucket !== 'all' && onlineBucket(sale.status) !== bucket) return false;
+    const q = search.trim().toLowerCase();
+    if (!q) return true;
+    const hay = [
+      sale.receiptNo, sale.id, sale.customerName, sale.customerEmail, sale.customerPhone,
+      sale.customerLocation, sale.notes, sale.paymentMethod, sale.status,
+    ].join(' ').toLowerCase();
+    return hay.includes(q);
+  });
+
+  const rows = filtered.slice(0, pageSize);
+
+  const resetFilters = () => {
+    setBucket('all');
+    setSearch('');
+    setPageSize(10);
+  };
+
+  const changeStatus = async (sale, status) => {
+    if (!canManage) return;
+    setSaving(true);
+    try {
+      if (syncEnabled() && Sync.updateOrderStatus) {
+        await Sync.updateOrderStatus(sale.id, status);
+      }
+      update({
+        ...data,
+        sales: data.sales.map((row) => row.id === sale.id ? { ...row, status } : row),
+      });
+      setView((current) => current && current.id === sale.id ? { ...current, status } : current);
+    } catch (err) {
+      alert(err.message || 'Could not update this order.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const openPrint = (sale) => {
+    setPrintSale(sale);
+    setTimeout(() => window.print(), 50);
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="flex items-center gap-2 text-slate-800">
+          <Icon name="ShoppingCart" size={20} />
+          <h2 className="font-display font-bold text-lg">Order Processing Dashboard</h2>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant={bucket === 'cancelled' ? 'danger' : 'secondary'} onClick={() => setBucket('cancelled')}>
+            Cancelled Orders
+          </Button>
+          <Button size="sm" variant={bucket === 'delivered' ? 'primary' : 'secondary'} onClick={() => setBucket('delivered')}>
+            Completed Orders
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => exportOnlineCsv(filtered)}>Export</Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { id: 'pending', label: 'Awaiting Processing', value: counts.pending, cls: 'bg-blue-500' },
+          { id: 'processing', label: 'Processing', value: counts.processing, cls: 'bg-amber-400' },
+          { id: 'delivered', label: 'Delivered Today', value: counts.deliveredToday, cls: 'bg-emerald-500' },
+          { id: 'cancelled', label: 'Cancelled Today', value: counts.cancelledToday, cls: 'bg-red-500' },
+        ].map((card) => (
+          <button
+            key={card.id}
+            type="button"
+            onClick={() => setBucket(card.id)}
+            className={`${card.cls} text-white rounded-xl p-4 text-left min-h-[96px] shadow-sm ${bucket === card.id ? 'ring-4 ring-navy/20' : ''}`}
+          >
+            <div className="text-3xl font-bold leading-none">{card.value}</div>
+            <div className="text-sm font-semibold mt-2">{card.label}</div>
+          </button>
+        ))}
+      </div>
+
+      <Card className="p-4">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
+          <div className="flex items-center gap-2 text-sm text-slate-600">
+            <span>Show</span>
+            <select className={inputCls} style={{ width: 88, minHeight: 40, padding: '6px 8px' }} value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+              {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+            <span>entries</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" onClick={() => exportOnlineCsv(filtered)}>Excel</Button>
+            <Button size="sm" variant="secondary" onClick={() => exportOnlineCsv(filtered)}>CSV</Button>
+            <Button size="sm" variant="secondary" onClick={resetFilters}>Reset</Button>
+            <Button size="sm" variant="secondary" onClick={() => onReload && onReload()}>Reload</Button>
+          </div>
+          <input
+            className={`${inputCls} lg:ml-auto lg:max-w-xs`}
+            placeholder="Search"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+      </Card>
+
+      <Card className="min-w-0">
+        <div className="overflow-x-auto max-w-full">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase text-slate-400 border-b border-slate-100">
+                <th className="px-4 py-3">Order #</th>
+                <th className="px-4 py-3">Customer</th>
+                <th className="px-4 py-3 hidden md:table-cell">Order Details</th>
+                <th className="px-4 py-3">Items</th>
+                <th className="px-4 py-3">Qty</th>
+                <th className="px-4 py-3 text-right">Total</th>
+                <th className="px-4 py-3">Payment</th>
+                <th className="px-4 py-3">Time</th>
+                <th className="px-4 py-3">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((sale) => {
+                const items = sale.items || [];
+                const qty = items.reduce((sum, it) => sum + Number(it.qty || 0), 0);
+                const delivery = saleDelivery(sale);
+                const paid = isPaidStatus(sale.status);
+                return (
+                  <tr key={sale.id} className="border-b border-slate-50 align-top hover:bg-slate-50/80">
+                    <td className="px-4 py-3 font-mono text-xs font-semibold whitespace-nowrap">{sale.receiptNo || sale.id}</td>
+                    <td className="px-4 py-3">
+                      <div className="font-semibold text-slate-800">{sale.customerName || 'Walk-in'}</div>
+                      <div className="text-xs text-slate-500">{sale.customerEmail || 'N/A'}</div>
+                      <div className="text-xs text-slate-400">{sale.customerPhone || 'N/A'}</div>
+                    </td>
+                    <td className="px-4 py-3 hidden md:table-cell text-xs text-slate-600 space-y-1">
+                      <div>{items.length} items</div>
+                      <div>{qty} qty</div>
+                      <div>Delivery (GH₵ {slipAmt(delivery.fee)})</div>
+                      <div>{sale.customerLocation || delivery.label || '—'}</div>
+                      <div>{trackingLabel(sale.status)}</div>
+                    </td>
+                    <td className="px-4 py-3">{items.length}</td>
+                    <td className="px-4 py-3">{qty}</td>
+                    <td className="px-4 py-3 text-right font-bold whitespace-nowrap">GH₵ {slipAmt(sale.total)}</td>
+                    <td className="px-4 py-3">
+                      <div><Badge tone={paid ? 'green' : 'amber'}>{paid ? 'Completed' : 'Pending'}</Badge></div>
+                      <div className="text-xs text-slate-500 mt-1">{paymentLabel(sale.paymentMethod)}</div>
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 whitespace-nowrap">{relativeTime(sale.createdAt)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-1">
+                        <button type="button" className="p-2 min-w-[40px] min-h-[40px] rounded-lg hover:bg-slate-100" title="View" onClick={() => setView(sale)}>
+                          <Icon name="Eye" size={16} />
+                        </button>
+                        <button type="button" className="p-2 min-w-[40px] min-h-[40px] rounded-lg hover:bg-slate-100" title="Print" onClick={() => openPrint(sale)}>
+                          <Icon name="Printer" size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {!rows.length && <EmptyState icon="ShoppingCart" text="No online orders match this filter" />}
+        </div>
+      </Card>
+
+      <Modal
+        open={!!view}
+        onClose={() => setView(null)}
+        title={view ? `Order ${view.receiptNo || ''}` : 'Order'}
+        wide
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setView(null)}>Close</Button>
+            <Button onClick={() => openPrint(view)}><Icon name="Printer" size={16} /> Print</Button>
+          </>
+        }
+      >
+        {view && (
+          <div className="space-y-4">
+            <div className="grid sm:grid-cols-2 gap-3 text-sm">
+              <div><span className="text-slate-500">Customer</span><div className="font-semibold">{view.customerName || '—'}</div></div>
+              <div><span className="text-slate-500">Phone</span><div className="font-semibold">{view.customerPhone || '—'}</div></div>
+              <div><span className="text-slate-500">Email</span><div className="font-semibold">{view.customerEmail || '—'}</div></div>
+              <div><span className="text-slate-500">Location</span><div className="font-semibold">{view.customerLocation || saleDelivery(view).label || '—'}</div></div>
+            </div>
+            {canManage && (
+              <Field label="Order status">
+                <select className={inputCls} value={view.status || 'PENDING'} disabled={saving} onChange={(e) => changeStatus(view, e.target.value)}>
+                  {['PENDING','CONFIRMED','PROCESSING','DISPATCHED','DELIVERED','COMPLETED','CANCELLED'].map((status) => (
+                    <option key={status} value={status}>{status}</option>
+                  ))}
+                </select>
+              </Field>
+            )}
+            <ul className="text-sm space-y-1">
+              {(view.items || []).map((item, index) => (
+                <li key={index} className="flex justify-between gap-3">
+                  <span>{item.name} × {item.qty}</span>
+                  <span className="font-semibold">{fmt(item.lineTotal)}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="flex justify-between font-bold"><span>Total</span><span>{fmt(view.total)}</span></div>
+          </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={!!printSale}
+        onClose={() => setPrintSale(null)}
+        title={printSale ? `Receipt ${printSale.receiptNo || ''}` : 'Receipt'}
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setPrintSale(null)}>Close</Button>
+            <Button onClick={() => window.print()}><Icon name="Printer" size={16} /> Print</Button>
+          </>
+        }
+      >
+        <ReceiptView sale={printSale} settings={settings} />
       </Modal>
     </div>
   );
@@ -2490,7 +2941,7 @@ function App() {
     if (page === 'dashboard') return canAccess(user.role, 'dashboard');
     if (page === 'pos') return canAccess(user.role, 'pos');
     if (page === 'products') return canAccess(user.role, 'products.view') || canAccess(user.role, 'products') || canAccess(user.role, 'products.edit');
-    if (page === 'transactions') return canAccess(user.role, 'transactions') || canAccess(user.role, 'transactions.own');
+    if (page === 'transactions' || page === 'online') return canAccess(user.role, 'transactions') || canAccess(user.role, 'transactions.own');
     if (page === 'customers') return canAccess(user.role, 'customers');
     if (page === 'suppliers') return canAccess(user.role, 'suppliers');
     if (page === 'expenses') return canAccess(user.role, 'expenses');
@@ -2570,6 +3021,23 @@ function App() {
       {page === 'pos' && <POSPage data={data} update={update} user={user} settings={data.settings} />}
       {page === 'products' && <ProductsPage data={data} update={update} user={user} />}
       {page === 'transactions' && <TransactionsPage data={data} user={user} settings={data.settings} />}
+      {page === 'online' && (
+        <OnlineOrdersPage
+          data={data}
+          update={update}
+          user={user}
+          settings={data.settings}
+          onReload={async () => {
+            if (!syncEnabled()) return;
+            try {
+              const remoteOrders = await Sync.fetchRecentOrders(200);
+              update({ ...data, sales: remoteOrders.map(Sync.mapOrderToPosSale) });
+            } catch (err) {
+              alert(err.message || 'Could not reload orders.');
+            }
+          }}
+        />
+      )}
       {page === 'customers' && canAccess(user.role, 'customers') && <CustomersPage data={data} update={update} />}
       {page === 'suppliers' && canAccess(user.role, 'suppliers') && <SuppliersPage data={data} update={update} user={user} />}
       {page === 'expenses' && canAccess(user.role, 'expenses') && <ExpensesPage data={data} update={update} user={user} />}

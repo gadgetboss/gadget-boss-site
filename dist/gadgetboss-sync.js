@@ -214,6 +214,8 @@
       total: Number(row.total),
       customerName: row.customer_name || '',
       customerPhone: row.customer_phone || '',
+      customerEmail: row.customer_email || '',
+      customerLocation: row.customer_location || '',
       customerId: row.customer_id,
       cashierId: row.cashier_id,
       cashierName: row.cashier_name || (row.source === 'ONLINE' ? 'Online' : ''),
@@ -221,7 +223,16 @@
       cogs: Number(row.cogs || 0),
       status: row.status,
       source: row.source,
+      notes: row.notes || '',
+      paymentReference: row.payment_reference || '',
     };
+  }
+
+  async function updateOrderStatus(id, status, config) {
+    if (!id) throw new Error('Order id is required');
+    var sb = getSupabase(config);
+    var res = await sb.from('orders').update({ status: status }).eq('id', id);
+    if (res.error) throw res.error;
   }
 
   function subscribeProducts(onChange, config) {
@@ -380,6 +391,7 @@
     completeOrder: completeOrder,
     fetchRecentOrders: fetchRecentOrders,
     mapOrderToPosSale: mapOrderToPosSale,
+    updateOrderStatus: updateOrderStatus,
     subscribeProducts: subscribeProducts,
     subscribeOrders: subscribeOrders,
     subscribeInventoryMovements: subscribeInventoryMovements,

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#070707">
   <meta name="mobile-web-app-capable" content="yes">
   <title>GADGETBOSS SHOP</title>
-  <meta name="description" content="Enter the GADGETBO$$ vault. Ghana's premier outlet for authentic gadgets, custom gaming setups, and ultra-high-end tech with instant nationwide delivery.">
+  <meta name="description" content="GadgetBoss shop in Tudu, Accra. AirPods, chargers and PlayStation. Pickup beside Tobinco Pharmacy. Same-day Accra and Tema.">
   
   <!-- Styling Design System -->
   <link rel="stylesheet" href="style.css">
@@ -31,7 +31,7 @@
           <img src="assets/logo.png" alt="GADGETBO$$ Logo" class="logo-img">
           <span class="vault-brand-copy">
             <span class="logo-text"><span class="logo-gadget">Gadget</span><span class="logo-boss">BO$$</span></span>
-            <span class="vault-brand-subtitle">Boss your tech</span>
+            <span class="vault-brand-subtitle">Tudu, Accra</span>
           </span>
         </a>
         
@@ -43,7 +43,7 @@
               <i data-lucide="heart"></i>
               <span class="action-badge" id="wishlist-badge-count">0</span>
             </div>
-            <span class="action-label">Your Wishlist</span>
+            <span class="action-label">Wishlist</span>
           </button>
           
           <!-- Vault Cart Drawer -->
@@ -52,7 +52,7 @@
               <i data-lucide="shopping-bag"></i>
               <span class="action-badge" id="header-cart-count">0</span>
             </div>
-            <span class="action-label">Your Cart</span>
+            <span class="action-label">Cart</span>
           </button>
 
           <!-- Purchase History -->
@@ -176,14 +176,13 @@
 
         <div class="vault-feature-area">
           <div class="vault-panel-head">
-            <span class="store-subtitle">Featured Drop</span>
-            <h3 class="store-title" id="featured-drop-title">AIRPODS PRO 3</h3>
+            <span class="store-subtitle">Featured</span>
+            <h3 class="store-title" id="featured-drop-title">AirPods Pro 3</h3>
           </div>
           <div id="featured-product-slot"></div>
         </div>
 
         <div class="vault-popular-head">
-          <span class="store-subtitle">Popular</span>
           <h3 class="vault-shell-title small">Popular</h3>
         </div>
 
@@ -205,8 +204,8 @@
         </article>
         <article class="trust-card">
           <p class="trust-kicker">Delivery</p>
-          <h3 class="trust-title">Same-day Accra &amp; Tema</h3>
-          <p class="trust-desc">Order in the morning, get it the same day in Accra and Tema. Other regions 1–3 days. Pickup at Tudu, beside Tobinco Pharmacy.</p>
+          <h3 class="trust-title">From GH₵40 in Accra</h3>
+          <p class="trust-desc">Fee fills in at checkout from your area. Pickup at Tudu is free. Tema and Kasoa GH₵70. Outside Accra is station send GH₵30. <a href="legal/shipping.html">See all areas</a>.</p>
         </article>
         <article class="trust-card">
           <p class="trust-kicker">Payment</p>
@@ -303,7 +302,7 @@
       
       <div class="cart-drawer-footer">
         <div class="cart-summary-row">
-          <span class="cart-summary-label">Total Cart Subtotal</span>
+          <span class="cart-summary-label">Total</span>
           <span class="cart-summary-value" id="cart-subtotal-price">GHS 0.00</span>
         </div>
         
@@ -347,8 +346,44 @@
         </div>
 
         <div class="modal-form-group">
-          <label class="modal-label" for="cust-location">Delivery Location</label>
-          <input type="text" id="cust-location" class="modal-input" required placeholder="e.g. East Legon, Accra">
+          <label class="modal-label" for="cust-pickup">How you get it</label>
+          <label class="delivery-pickup">
+            <input type="checkbox" id="cust-pickup">
+            <span>I will pick up at Tudu, beside Tobinco Pharmacy (free)</span>
+          </label>
+        </div>
+
+        <div class="modal-form-group" id="cust-location-group">
+          <label class="modal-label" for="cust-location">Delivery area</label>
+          <input type="text" id="cust-location" class="modal-input" list="delivery-area-list" required placeholder="e.g. East Legon" autocomplete="address-level2">
+          <datalist id="delivery-area-list">
+            <option value="East Legon"></option>
+            <option value="Osu"></option>
+            <option value="Labone"></option>
+            <option value="Cantonments"></option>
+            <option value="Ridge"></option>
+            <option value="Dansoman"></option>
+            <option value="Lapaz"></option>
+            <option value="Spintex"></option>
+            <option value="Madina"></option>
+            <option value="Adenta"></option>
+            <option value="Haatso"></option>
+            <option value="Ashaley Botwe"></option>
+            <option value="Kwabenya"></option>
+            <option value="Pokuase"></option>
+            <option value="Oyibi"></option>
+            <option value="Kasoa"></option>
+            <option value="Tema"></option>
+            <option value="Nsawam"></option>
+            <option value="Dawhenya"></option>
+            <option value="Buduburam"></option>
+            <option value="Prampram"></option>
+            <option value="Kumasi"></option>
+            <option value="Takoradi"></option>
+            <option value="Cape Coast"></option>
+            <option value="Tamale"></option>
+          </datalist>
+          <p class="delivery-fee-note" id="delivery-fee-note">Type your area. The delivery fee fills in.</p>
         </div>
         
         <div class="modal-form-group" id="momo-fields-container">
@@ -368,6 +403,14 @@
             <span id="summary-items-count">0 items</span>
           </div>
           <div class="summary-row">
+            <span>Items total</span>
+            <span id="summary-items-price">GHS 0</span>
+          </div>
+          <div class="summary-row">
+            <span>Delivery</span>
+            <span id="summary-delivery-price">—</span>
+          </div>
+          <div class="summary-row">
             <span>Total</span>
             <span id="summary-total-price" style="color: var(--accent-blue);">GHS 0.00</span>
           </div>
@@ -383,24 +426,50 @@
   <!-- CHECKOUT RECEIPT -->
   <div class="modal-overlay" id="checkout-receipt-overlay">
     <div class="checkout-modal checkout-receipt-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-receipt-title">
-      <div class="modal-header">
+      <div class="modal-header no-print">
         <h3 class="modal-title" id="checkout-receipt-title">Your receipt</h3>
         <button class="btn-close-modal" id="checkout-receipt-close" type="button" aria-label="Close receipt">×</button>
       </div>
-      <p class="checkout-receipt-kicker" id="checkout-receipt-kicker">Payment received. Keep this receipt to track your order.</p>
-      <p class="checkout-receipt-no" id="checkout-receipt-number"></p>
-      <p class="checkout-receipt-ref" id="checkout-receipt-ref"></p>
-      <ul class="checkout-receipt-items" id="checkout-receipt-items"></ul>
-      <div class="payment-summary">
-        <div class="summary-row">
-          <span>Total</span>
-          <span id="checkout-receipt-total" style="color: var(--accent-blue);"></span>
+      <p class="checkout-receipt-kicker no-print" id="checkout-receipt-kicker">Payment received. Keep this receipt to track your order.</p>
+      <div id="shop-receipt-print" class="thermal-slip">
+        <div class="thermal-slip-head">
+          <div class="thermal-slip-name">GadgetBoss</div>
+          <div>Tudu, beside Tobinco Pharmacy</div>
+          <div>Accra, Ghana</div>
+          <div>Tel: 054 063 9091</div>
         </div>
+        <div class="thermal-slip-meta">
+          <div id="checkout-receipt-number"></div>
+          <div id="checkout-receipt-date"></div>
+          <div id="checkout-receipt-customer"></div>
+        </div>
+        <table class="thermal-slip-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Item</th>
+              <th>QTY</th>
+              <th>Price</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="checkout-receipt-items"></tbody>
+        </table>
+        <div class="thermal-slip-rule"></div>
+        <div class="thermal-slip-row"><span>Subtotal</span><span id="checkout-receipt-subtotal"></span></div>
+        <div class="thermal-slip-row" id="checkout-receipt-delivery-row" hidden><span>Delivery</span><span id="checkout-receipt-delivery"></span></div>
+        <div class="thermal-slip-row thermal-slip-grand"><span>Grand Total</span><span id="checkout-receipt-total"></span></div>
+        <div class="thermal-slip-row"><span>Paid</span><span id="checkout-receipt-paid"></span></div>
+        <p class="thermal-slip-thanks">Thank you</p>
       </div>
-      <button type="button" class="btn-modal-action verify" id="checkout-receipt-track">
+      <p class="checkout-receipt-ref no-print" id="checkout-receipt-ref"></p>
+      <button type="button" class="btn-modal-action verify no-print" id="checkout-receipt-print">
+        <span>Print receipt</span>
+      </button>
+      <button type="button" class="btn-modal-action verify no-print" id="checkout-receipt-track">
         <span>Track this order</span>
       </button>
-      <button type="button" class="account-btn-ghost checkout-receipt-wa" id="checkout-receipt-whatsapp">
+      <button type="button" class="account-btn-ghost checkout-receipt-wa no-print" id="checkout-receipt-whatsapp">
         Send receipt on WhatsApp
       </button>
     </div>

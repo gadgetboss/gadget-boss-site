@@ -10,8 +10,8 @@ let PRODUCTS = [
     image: "assets/airpods-pro-3.jpg",
     rating: 5.0,
     reviewsCount: 128,
-    badge: "IOS 26 VERIFIED",
-    tagline: "H2 Apple Silicon, Active Noise Cancellation, 30h MagSafe",
+    badge: "Sealed",
+    tagline: "Noise cancel. USB-C case.",
     specs: { driver: "Custom High-Excursion", battery: "6hrs (30hrs w/ Case)", chip: "H2 Apple Silicon", charging: "MagSafe / USB-C", sensors: "Skin-detect / Motion" }
   },
   {
@@ -24,8 +24,8 @@ let PRODUCTS = [
     image: "assets/airpods-pro-2-gen.jpg",
     rating: 4.8,
     reviewsCount: 215,
-    badge: "BEST SELLER",
-    tagline: "Adaptive Transparency, Low-Distortion Audio",
+    badge: "Best seller",
+    tagline: "Noise cancel. MagSafe case.",
     specs: { driver: "Low-Distortion", battery: "6hrs (30hrs w/ Case)", chip: "H2 Chip", charging: "Lightning / MagSafe", transparency: "Adaptive" }
   },
   {
@@ -38,8 +38,8 @@ let PRODUCTS = [
     image: "assets/airpods-pro-v1.jpg",
     rating: 4.7,
     reviewsCount: 89,
-    badge: "V.1 LIMITED",
-    tagline: "Active Noise Cancellation, Smart H1 Chip",
+    badge: "1st Gen",
+    tagline: "Noise cancel. Lightning case.",
     specs: { driver: "High-Excursion", battery: "4.5hrs (24hrs w/ Case)", chip: "H1 Chip", charging: "Lightning", anc: "Active" }
   },
   {
@@ -52,8 +52,8 @@ let PRODUCTS = [
     image: "assets/airpods-3-new.webp",
     rating: 4.8,
     reviewsCount: 64,
-    badge: "POPULAR",
-    tagline: "Personalized Spatial Audio, Sweat-Resistant",
+    badge: "Popular",
+    tagline: "Spatial audio. Sweat resistant.",
     specs: { audio: "Spatial Audio", battery: "6hrs Total", design: "Contoured", water: "IPX4", charging: "MagSafe Inc." }
   },
   {
@@ -66,8 +66,8 @@ let PRODUCTS = [
     image: "assets/airpods4.jpg",
     rating: 4.5,
     reviewsCount: 156,
-    badge: "BUDGET",
-    tagline: "Instant Device Switch, Optical Sensor Detect",
+    badge: "Good price",
+    tagline: "New shape. Easy iPhone switch.",
     specs: { connection: "Instant Device Switch", battery: "5hrs Talk", chip: "H1", voice: "Always-on Siri", sensor: "Optical" }
   },
   {
@@ -79,8 +79,8 @@ let PRODUCTS = [
     image: "assets/AirPods-Max-black.webp",
     rating: 5.0,
     reviewsCount: 42,
-    badge: "ELITE PRODUCTS",
-    tagline: "40mm Dynamic Driver, High-Fidelity ANC Audio",
+    badge: "In shop",
+    tagline: "Over-ear. Noise cancel.",
     specs: { driver: "40mm Dynamic", battery: "20hrs ANC", chip: "Dual H2", charging: "L-Port", build: "Mesh/Alu" }
   },
   {
@@ -92,8 +92,8 @@ let PRODUCTS = [
     image: "assets/usb-c-charger-20w.png",
     rating: 4.5,
     reviewsCount: 310,
-    badge: "ORIGINAL",
-    tagline: "20W Max Power Delivery, Secure Fast Charging",
+    badge: "Original",
+    tagline: "Original 20W USB-C brick.",
     specs: { output: "20W Max", port: "USB-C", safety: "PD 3.0", design: "Folding", weight: "55g" }
   },
   {
@@ -105,8 +105,8 @@ let PRODUCTS = [
     image: "assets/charging-cable-c-to-l.png",
     rating: 4.4,
     reviewsCount: 115,
-    badge: "MFI CERTIFIED",
-    tagline: "MFi Certified Braided Cable, 30W Charging",
+    badge: "MFi",
+    tagline: "MFi cable. USB-C to Lightning.",
     specs: { length: "1m", build: "Braided", certification: "MFi", speed: "480Mbps", power: "30W Max" }
   },
   {
@@ -118,8 +118,8 @@ let PRODUCTS = [
     image: "assets/type-c-to-type-c-cable.png",
     rating: 4.3,
     reviewsCount: 310,
-    badge: "ORIGINAL",
-    tagline: "TPE High-Speed Sync, 60W Power Delivery",
+    badge: "Original",
+    tagline: "Type-C cable. 60W.",
     specs: { length: "1m", build: "TPE", power: "60W Max", speed: "USB 2.0", sync: "Yes" }
   },
   {
@@ -131,8 +131,8 @@ let PRODUCTS = [
     image: "assets/macbook-charger.png",
     rating: 4.7,
     reviewsCount: 22,
-    badge: "PREMIUM",
-    tagline: "96W PD Power Source, Smart Current Safeguard",
+    badge: "In shop",
+    tagline: "96W USB-C MacBook charger.",
     specs: { output: "96W PD", port: "USB-C", cables: "Not Inc.", weight: "180g", safety: "Over-Volt" }
   },
   {
@@ -144,8 +144,8 @@ let PRODUCTS = [
     image: "assets/battery pack.jpg",
     rating: 4.9,
     reviewsCount: 18,
-    badge: "HOT",
-    tagline: "5k mAh MagSafe Power Bank, Pass-Through Charging",
+    badge: "In shop",
+    tagline: "MagSafe power bank. 5000mAh.",
     specs: { capacity: "5k mAh", snap: "Instant", charging: "Pass-thru", tech: "Lithium", thickness: "11mm" }
   },
   {
@@ -157,8 +157,8 @@ let PRODUCTS = [
     image: "assets/wireless powerbank.webp",
     rating: 4.6,
     reviewsCount: 115,
-    badge: "WIRELESS",
-    tagline: "10k mAh Wireless, Digital LED Indicator",
+    badge: "Wireless",
+    tagline: "10,000mAh wireless power bank.",
     specs: { capacity: "10k mAh", wireless: "7.5W", ports: "2 Output", display: "LED Digital", weight: "220g" }
   },
   {
@@ -170,8 +170,8 @@ let PRODUCTS = [
     image: "assets/ps 4 slim.webp",
     rating: 4.5,
     reviewsCount: 12,
-    badge: "CONTACT FOR PRICE",
-    tagline: "500GB/1TB Console, 1 DualShock Controller",
+    badge: "Ask price",
+    tagline: "PS4 Slim. Ask on WhatsApp.",
     specs: { storage: "500GB/1TB", resolution: "1080p", controllers: "1 Blue", power: "165W", color: "Black" }
   },
   {
@@ -183,8 +183,8 @@ let PRODUCTS = [
     image: "assets/ps4 pro.webp",
     rating: 4.6,
     reviewsCount: 8,
-    badge: "CONTACT FOR PRICE",
-    tagline: "1TB 4K UHD Console, Enhanced 5GHz Wifi",
+    badge: "Ask price",
+    tagline: "PS4 Pro. Ask on WhatsApp.",
     specs: { storage: "1TB HDD", resolution: "4K native", hdr: "Supported", audio: "Optical Out", wifi: "5GHz" }
   },
   {
@@ -196,8 +196,8 @@ let PRODUCTS = [
     image: "assets/ps5 slim.webp",
     rating: 5.0,
     reviewsCount: 24,
-    badge: "NEW ARRIVAL",
-    tagline: "1TB High-Speed SSD Console, 4K 120Hz Output",
+    badge: "New",
+    tagline: "1TB. 4K.",
     specs: { storage: "1TB SSD", resolution: "4K 120Hz", type: "Disc/Digital", build: "Compact", tech: "Ray Tracing" }
   },
   {
@@ -209,8 +209,8 @@ let PRODUCTS = [
     image: "assets/standard.webp",
     rating: 4.9,
     reviewsCount: 19,
-    badge: "IN STOCK",
-    tagline: "825GB SSD, Native 4K HDR 120Hz Output",
+    badge: "In stock",
+    tagline: "825GB disc console.",
     specs: { storage: "825GB SSD", resolution: "4K HDR", controllers: "1 Inc.", port: "HDMI 2.1", tech: "Tempest 3D" }
   },
   {
@@ -222,8 +222,8 @@ let PRODUCTS = [
     image: "assets/ps5 pro.webp",
     rating: 5.0,
     reviewsCount: 4,
-    badge: "PREMIUM",
-    tagline: "2TB SSD, Native 8K 60Hz, AI PSSR Scaling",
+    badge: "In shop",
+    tagline: "2TB PS5 Pro.",
     specs: { storage: "2TB SSD", resolution: "8K 60Hz", pssr: "AI Scaling", gpu: "Enhanced", build: "Pro Tower" }
   },
   {
@@ -235,8 +235,8 @@ let PRODUCTS = [
     image: "assets/ps5 control.webp",
     rating: 4.8,
     reviewsCount: 56,
-    badge: "ORIGINAL",
-    tagline: "Haptic Feedback, Responsive Adaptive Triggers",
+    badge: "Original",
+    tagline: "Original PS5 pad.",
     specs: { haptics: "Adaptive Triggers", feedback: "Haptic", battery: "1560mAh", tech: "Bluetooth 5.1", weight: "280g" }
   },
   {
@@ -248,8 +248,8 @@ let PRODUCTS = [
     image: "assets/ps4 controller.webp",
     rating: 4.7,
     reviewsCount: 92,
-    badge: "BEST SELLER",
-    tagline: "2-Point Touch Pad, Integrated Light Bar",
+    badge: "Best seller",
+    tagline: "Original PS4 pad.",
     specs: { touch: "2-Point Pad", light: "Integrated Bar", battery: "1000mAh", tech: "Bluetooth 2.1", weight: "210g" }
   },
   {
@@ -261,8 +261,8 @@ let PRODUCTS = [
     image: "assets/quadrapod.webp",
     rating: 4.5,
     reviewsCount: 31,
-    badge: "PROMO",
-    tagline: "360° Auto Rotation, Smart AI Face Tracking",
+    badge: "Promo",
+    tagline: "Auto face-tracking stand.",
     specs: { rotation: "360 Loop", tracking: "AI Vision", mount: "Tripod Opt", battery: "15hrs", payload: "3kg" }
   },
   {
@@ -275,8 +275,8 @@ let PRODUCTS = [
     image: "assets/gaming-phone-cooler.png",
     rating: 4.8,
     reviewsCount: 42,
-    badge: "HOT DROP",
-    tagline: "Peltier Cooling Fan, RGB Aura Sync",
+    badge: "In shop",
+    tagline: "Phone cooler for gaming.",
     specs: { cooling: "Peltier Tech", fanSpeed: "Up to 5500 RPM", rgb: "Aura Sync", weight: "78g", ports: "Dual Type-C" }
   },
   {
@@ -289,8 +289,8 @@ let PRODUCTS = [
     image: "assets/video-capture-card.png",
     rating: 4.9,
     reviewsCount: 29,
-    badge: "PROMO",
-    tagline: "4K 60fps Passthrough, Zero-Latency Streaming",
+    badge: "Promo",
+    tagline: "4K capture card.",
     specs: { input: "HDMI 2.0", output: "HDMI Passthrough", capture: "4K 60fps / 1080p 120fps", interface: "USB 3.0", latency: "Zero-Latency" }
   }
 ];
@@ -305,6 +305,168 @@ let currentCheckoutType = "whatsapp"; // 'whatsapp' or 'paystack'
 const WHATSAPP_PHONE = "233540639091";
 const INSTAGRAM_URL = "https://www.instagram.com/gadgetbosss_/";
 const TIKTOK_URL = "https://www.tiktok.com/@gadgetbosss";
+
+const DELIVERY_ZONES = [
+  {
+    id: "pickup",
+    label: "Pickup at Tudu",
+    fee: 0,
+    door: true,
+    aliases: ["pickup", "pick up", "shop", "store", "tudu", "tobinco"],
+  },
+  {
+    id: "core",
+    label: "Core Accra",
+    fee: 40,
+    door: true,
+    aliases: [
+      "east legon", "osu", "labone", "cantonments", "cantonment", "ridge",
+      "dansoman", "lapaz", "la paz", "spintex", "madina", "adabraka",
+      "kaneshie", "tesano", "dzorwulu", "abelemkpe", "airport residential",
+      "accra central", "makola", "circle", "nima", "kanda", "labadi",
+      "roman ridge", "kokomlemle", "darkuman", "odorkor", "korle bu",
+    ],
+  },
+  {
+    id: "near",
+    label: "Near outskirts",
+    fee: 50,
+    door: true,
+    aliases: ["adenta", "haatso", "ashaley botwe", "ashale botwe", "dome", "taifa", "agbogba", "frafraha"],
+  },
+  {
+    id: "far",
+    label: "Far outskirts",
+    fee: 60,
+    door: true,
+    aliases: ["kwabenya", "pokuase", "oyibi", "amasaman", "abokobi"],
+  },
+  {
+    id: "tier1",
+    label: "Far Greater Accra",
+    fee: 70,
+    door: true,
+    aliases: ["kasoa", "tema", "ashaiman", "ashiaman"],
+  },
+  {
+    id: "tier2",
+    label: "Far Greater Accra",
+    fee: 80,
+    door: true,
+    aliases: ["nsawam", "dawhenya", "buduburam", "prampram", "kpone", "afienya"],
+  },
+  {
+    id: "outside",
+    label: "Outside Accra · station send",
+    fee: 30,
+    door: false,
+    aliases: [
+      "ada", "kumasi", "takoradi", "sekondi", "volta", "ho", "cape coast",
+      "tamale", "sunyani", "koforidua", "wa", "techiman", "winneba",
+      "hohoe", "bolgatanga", "tarkwa",
+    ],
+  },
+];
+
+function normalizePlace(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function quoteDelivery(location, pickup) {
+  if (pickup) {
+    return {
+      id: "pickup",
+      label: "Pickup at Tudu",
+      fee: 0,
+      door: true,
+      matched: true,
+      note: "Pickup at Tudu is free.",
+    };
+  }
+  const text = normalizePlace(location);
+  if (!text) {
+    return { matched: false, fee: null, label: "", note: "Type your area. The delivery fee fills in." };
+  }
+  let best = null;
+  let bestLen = 0;
+  DELIVERY_ZONES.forEach((zone) => {
+    zone.aliases.forEach((alias) => {
+      if (text.includes(alias) && alias.length >= bestLen) {
+        best = zone;
+        bestLen = alias.length;
+      }
+    });
+  });
+  if (!best && (text === "accra" || text.endsWith(" accra"))) {
+    best = DELIVERY_ZONES.find((zone) => zone.id === "core");
+  }
+  if (!best) {
+    return {
+      matched: false,
+      fee: null,
+      label: "",
+      note: "We could not place that area. Use a name like East Legon, Kasoa or Kumasi.",
+    };
+  }
+  return {
+    ...best,
+    matched: true,
+    note: best.door
+      ? `${best.label} · GH₵${best.fee}`
+      : `${best.label} · GH₵${best.fee}. This is station send, not door-to-door.`,
+  };
+}
+
+function cartItemsTotal() {
+  return cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
+}
+
+function checkoutDeliveryState() {
+  const pickup = !!(document.getElementById("cust-pickup") && document.getElementById("cust-pickup").checked);
+  const locationInput = document.getElementById("cust-location");
+  const location = locationInput ? locationInput.value.trim() : "";
+  return quoteDelivery(location, pickup);
+}
+
+function formatCheckoutLocation(location, quote, pickup) {
+  if (pickup) return "Pickup — Tudu, beside Tobinco Pharmacy";
+  if (quote.matched) {
+    const kind = quote.door ? "Delivery" : "Station send";
+    return `${location} · ${kind} GH₵${quote.fee} (${quote.label})`;
+  }
+  return location;
+}
+
+function refreshCheckoutDelivery() {
+  const pickupBox = document.getElementById("cust-pickup");
+  const locationGroup = document.getElementById("cust-location-group");
+  const locationInput = document.getElementById("cust-location");
+  const note = document.getElementById("delivery-fee-note");
+  const pickup = !!(pickupBox && pickupBox.checked);
+  if (locationGroup) locationGroup.hidden = pickup;
+  if (locationInput) {
+    locationInput.required = !pickup;
+    if (pickup) locationInput.value = "Pickup at Tudu";
+  }
+  const itemsTotal = cartItemsTotal();
+  const quote = checkoutDeliveryState();
+  const deliveryEl = document.getElementById("summary-delivery-price");
+  const itemsPriceEl = document.getElementById("summary-items-price");
+  if (itemsPriceEl) itemsPriceEl.textContent = formatGhs(itemsTotal, 0);
+  if (deliveryEl) {
+    deliveryEl.textContent = quote.matched ? formatGhs(quote.fee, 0) : "—";
+  }
+  if (note) note.textContent = quote.note;
+  if (summaryTotalPrice) {
+    summaryTotalPrice.innerText = quote.matched
+      ? formatGhs(itemsTotal + quote.fee, 0)
+      : formatGhs(itemsTotal, 0);
+  }
+}
 
 
 // --- WISHLIST STATE VAULT ---
@@ -401,9 +563,16 @@ const checkoutReceiptOverlay = document.getElementById("checkout-receipt-overlay
 const checkoutReceiptTitle = document.getElementById("checkout-receipt-title");
 const checkoutReceiptKicker = document.getElementById("checkout-receipt-kicker");
 const checkoutReceiptNumber = document.getElementById("checkout-receipt-number");
+const checkoutReceiptDate = document.getElementById("checkout-receipt-date");
+const checkoutReceiptCustomer = document.getElementById("checkout-receipt-customer");
 const checkoutReceiptRef = document.getElementById("checkout-receipt-ref");
 const checkoutReceiptItems = document.getElementById("checkout-receipt-items");
+const checkoutReceiptSubtotal = document.getElementById("checkout-receipt-subtotal");
+const checkoutReceiptDeliveryRow = document.getElementById("checkout-receipt-delivery-row");
+const checkoutReceiptDelivery = document.getElementById("checkout-receipt-delivery");
 const checkoutReceiptTotal = document.getElementById("checkout-receipt-total");
+const checkoutReceiptPaid = document.getElementById("checkout-receipt-paid");
+const checkoutReceiptPrintBtn = document.getElementById("checkout-receipt-print");
 const checkoutReceiptTrackBtn = document.getElementById("checkout-receipt-track");
 const checkoutReceiptWhatsappBtn = document.getElementById("checkout-receipt-whatsapp");
 const checkoutReceiptCloseBtn = document.getElementById("checkout-receipt-close");
@@ -498,6 +667,8 @@ async function hydrateCatalogueFromSupabase() {
           return {
             ...local,
             ...r,
+            badge: local.badge || r.badge,
+            tagline: local.tagline || r.tagline,
             rating: local.rating || r.rating || 4.8,
             reviewsCount: local.reviewsCount || r.reviewsCount || 0,
             specs: Object.keys(r.specs || {}).length ? r.specs : (local.specs || {}),
@@ -527,7 +698,8 @@ async function hydrateCatalogueFromSupabase() {
           price: Number(r.price),
           stock: Number(r.stock),
           image: r.image || local.image,
-          tagline: r.tagline || local.tagline,
+          badge: local.badge || r.badge,
+          tagline: local.tagline || r.tagline,
           category: r.category || local.category,
           rating: local.rating || r.rating || 4.8,
           reviewsCount: local.reviewsCount || 0,
@@ -674,14 +846,14 @@ function setupEventListeners() {
   // Wishlist Action Modal Trigger
   wishlistTrigger.addEventListener("click", () => {
     if (wishlist.length === 0) {
-      alert("💖 YOUR WISHLIST\nYour luxury wishlist is currently empty. Explore the catalog drops below to select custom hardware!");
+      alert("Wishlist is empty. Tap the heart on a product to save it.");
     } else {
       const itemsList = wishlist.map(id => {
         const p = PRODUCTS.find(prod => prod.id === id);
         if (!p) return "";
-        return `- ${p.title} (${p.price > 0 ? 'GHS ' + p.price.toLocaleString() : 'Inquire Now'})`;
+        return `- ${p.title} (${p.price > 0 ? 'GHS ' + p.price.toLocaleString() : 'Ask price'})`;
       }).filter(Boolean).join("\n");
-      alert(`💖 YOUR WISHLIST\nYou have serial-pinned the following verified products to your wishlist:\n\n${itemsList}\n\nAdd them to your cart when you are ready to check out!`);
+      alert(`Wishlist\n\n${itemsList}\n\nAdd them to your cart when you are ready.`);
     }
   });
 
@@ -712,6 +884,13 @@ function setupEventListeners() {
   });
 
   checkoutDetailsForm.addEventListener("submit", handleCheckoutSubmit);
+  const pickupBox = document.getElementById("cust-pickup");
+  const locationInput = document.getElementById("cust-location");
+  if (pickupBox) pickupBox.addEventListener("change", refreshCheckoutDelivery);
+  if (locationInput) {
+    locationInput.addEventListener("input", refreshCheckoutDelivery);
+    locationInput.addEventListener("change", refreshCheckoutDelivery);
+  }
 
   closeProductDetailBtn.addEventListener("click", closeProductDetail);
   productDetailOverlay.addEventListener("click", (e) => {
@@ -845,7 +1024,7 @@ function renderProducts() {
 
   if (featuredProductSlot && heroProduct) {
     if (featuredDropTitle) {
-      featuredDropTitle.textContent = (heroProduct.title || "AirPods Pro 3").toUpperCase();
+      featuredDropTitle.textContent = heroProduct.title || "AirPods Pro 3";
     }
     const heroPrice = heroProduct.price === 0
       ? "Price on Request"
@@ -876,15 +1055,15 @@ function renderProducts() {
   productsGrid.innerHTML = browseProducts.map(prod => {
     // Badge styling
     let badgeClass = "prod-badge";
-    const badgeUpper = prod.badge.toUpperCase();
-    if (badgeUpper.includes("LIMIT") || badgeUpper.includes("ELITE") || badgeUpper.includes("VERIFIED")) {
+    const badgeUpper = String(prod.badge || "").toUpperCase();
+    if (badgeUpper.includes("LIMIT") || badgeUpper.includes("1ST")) {
       badgeClass += " limited";
-    } else if (badgeUpper.includes("BEST") || badgeUpper.includes("HOT") || badgeUpper.includes("ARRIVAL")) {
+    } else if (badgeUpper.includes("BEST") || badgeUpper.includes("NEW")) {
       badgeClass += " best";
-    } else if (badgeUpper.includes("NEW") || badgeUpper.includes("ORIGINAL") || badgeUpper.includes("PROMO")) {
+    } else if (badgeUpper.includes("ORIGINAL") || badgeUpper.includes("PROMO") || badgeUpper.includes("SEALED")) {
       badgeClass += " new";
     }
-    const badgeLabel = badgeUpper;
+    const badgeLabel = prod.badge || "";
 
     // Localized formatting (Ghana GHS)
     let priceFormatted = "";
@@ -1267,7 +1446,7 @@ function paymentMethodForProvider(provider) {
   return provider === "card" ? "Card" : "MoMo";
 }
 
-async function recordOnlineOrder({ name, email, phone, location, paymentMethod, status, idempotencyKey, paymentReference }) {
+async function recordOnlineOrder({ name, email, phone, location, paymentMethod, status, idempotencyKey, paymentReference, notes }) {
   const Sync = window.GadgetBossSync;
   const customerPhone = normalizeGhanaPhone(phone) || String(phone || "").trim();
   if (!(Sync && Sync.isSyncConfigured())) {
@@ -1282,6 +1461,7 @@ async function recordOnlineOrder({ name, email, phone, location, paymentMethod, 
     customerPhone,
     customerEmail: email,
     customerLocation: location,
+    notes: notes || "",
     paymentReference: paymentReference || "",
     items: cart.map((item) => ({
       productId: item.product.id,
@@ -1325,7 +1505,7 @@ async function verifyPaystackPayment(reference, amountPesewas) {
   return { configured: false, verified: false };
 }
 
-function startPaystackCheckout({ name, email, phone, location, provider, totalPrice }) {
+function startPaystackCheckout({ name, email, phone, location, provider, totalPrice, deliveryFee, deliveryLabel }) {
   const publicKey = getPaystackPublicKey();
   if (!publicKey) {
     alert("Paystack is not configured yet. Add your Paystack public key to window.__GADGETBOSS_ENV__.PAYSTACK_PUBLIC_KEY in index.html (Dashboard → Settings → API Keys).");
@@ -1356,6 +1536,7 @@ function startPaystackCheckout({ name, email, phone, location, provider, totalPr
         { display_name: "Customer", variable_name: "customer_name", value: name },
         { display_name: "Phone", variable_name: "phone", value: phone },
         { display_name: "Delivery", variable_name: "location", value: location },
+        { display_name: "Delivery fee", variable_name: "delivery_fee", value: String(deliveryFee || 0) },
       ],
     },
     callback: function (response) {
@@ -1367,6 +1548,8 @@ function startPaystackCheckout({ name, email, phone, location, provider, totalPr
         provider,
         totalPrice,
         amountPesewas,
+        deliveryFee,
+        deliveryLabel,
         reference: (response && response.reference) || reference,
       });
     },
@@ -1375,7 +1558,7 @@ function startPaystackCheckout({ name, email, phone, location, provider, totalPr
   handler.openIframe();
 }
 
-async function finalizePaystackOrder({ name, email, phone, location, provider, totalPrice, amountPesewas, reference }) {
+async function finalizePaystackOrder({ name, email, phone, location, provider, totalPrice, amountPesewas, reference, deliveryFee, deliveryLabel }) {
   const verification = await verifyPaystackPayment(reference, amountPesewas);
   const publicKey = getPaystackPublicKey();
   if (publicKey) {
@@ -1407,6 +1590,7 @@ async function finalizePaystackOrder({ name, email, phone, location, provider, t
       location,
       paymentMethod: paymentMethodForProvider(provider),
       status: "CONFIRMED",
+      notes: `Delivery GH₵${deliveryFee || 0} · ${deliveryLabel || ""}`,
       idempotencyKey: `paystack-${reference}`,
       paymentReference: reference,
     });
@@ -1430,8 +1614,13 @@ async function finalizePaystackOrder({ name, email, phone, location, provider, t
       receiptNo,
       orderId: recorded.orderId,
       paymentReference: reference,
+      paymentMethod: paymentMethodForProvider(provider),
       totalFormatted: totalPriceFormatted,
+      total: totalPrice,
       items: cartSnapshot,
+      deliveryFee,
+      deliveryLabel,
+      createdAt: new Date().toISOString(),
     });
     return;
   } catch (err) {
@@ -1449,13 +1638,10 @@ function openCheckoutModal(type) {
   toggleCartDrawer(false);
   
   const totalCount = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  const priceFormatted = new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', minimumFractionDigits: 0 }).format(totalPrice);
-
+  const totalPrice = cartItemsTotal();
   summaryItemsCount.innerText = `${totalCount} ${totalCount === 1 ? 'item' : 'items'}`;
-  summaryTotalPrice.innerText = priceFormatted;
-
   applyVerifiedCustomerToCheckoutForm();
+  refreshCheckoutDelivery();
 
   const momoFields = document.getElementById("momo-fields-container");
   
@@ -1487,9 +1673,17 @@ async function handleCheckoutSubmit(e) {
   const name = document.getElementById("cust-name").value.trim();
   const email = document.getElementById("cust-email").value.trim();
   const phone = document.getElementById("cust-phone").value.trim();
-  const location = document.getElementById("cust-location").value.trim();
-  const totalPrice = cart.reduce((sum, item) => sum + (item.product.price * item.quantity), 0);
-  const totalPriceFormatted = new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', minimumFractionDigits: 0 }).format(totalPrice);
+  const pickup = !!(document.getElementById("cust-pickup") && document.getElementById("cust-pickup").checked);
+  const locationRaw = document.getElementById("cust-location").value.trim();
+  const quote = quoteDelivery(locationRaw, pickup);
+  if (!quote.matched) {
+    alert(quote.note || "Type a delivery area we know, or pick up at Tudu.");
+    return;
+  }
+  const location = formatCheckoutLocation(locationRaw, quote, pickup);
+  const itemsTotal = cartItemsTotal();
+  const totalPrice = itemsTotal + quote.fee;
+  const totalPriceFormatted = formatGhs(totalPrice, 0);
 
   if (!cart.length) {
     alert('Your cart is empty.');
@@ -1500,7 +1694,7 @@ async function handleCheckoutSubmit(e) {
 
   if (currentCheckoutType === "paystack") {
     const provider = document.getElementById("cust-momo-provider").value || "all";
-    startPaystackCheckout({ name, email, phone, location, provider, totalPrice });
+    startPaystackCheckout({ name, email, phone, location, provider, totalPrice, deliveryFee: quote.fee, deliveryLabel: quote.label });
     return;
   }
 
@@ -1520,6 +1714,7 @@ async function handleCheckoutSubmit(e) {
         location,
         paymentMethod: 'MoMo',
         status: 'PENDING',
+        notes: `Delivery GH₵${quote.fee} · ${quote.label}`,
         idempotencyKey: `online-${(crypto.randomUUID && crypto.randomUUID()) || Date.now()}-${phone}`,
       });
       if (!recorded.ok) {
@@ -1546,8 +1741,13 @@ async function handleCheckoutSubmit(e) {
         receiptNo,
         orderId: recorded.orderId,
         paymentReference: "",
+        paymentMethod: "MoMo",
         totalFormatted: totalPriceFormatted,
+        total: totalPrice,
         items: cartSnapshot,
+        deliveryFee: quote.fee,
+        deliveryLabel: quote.label,
+        createdAt: new Date().toISOString(),
       });
     } catch (err) {
       console.error(err);
@@ -1750,8 +1950,83 @@ function buildCheckoutWhatsappMessage(receipt) {
     const itemPrice = new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", minimumFractionDigits: 0 }).format(item.product.price * item.quantity);
     messageText += `${idx + 1}. ${item.product.title} x ${item.quantity} — ${itemPrice}\n`;
   });
+  if (receipt.deliveryFee != null) {
+    messageText += `\nDelivery: ${formatGhs(receipt.deliveryFee, 0)}`;
+    if (receipt.deliveryLabel) messageText += ` (${receipt.deliveryLabel})`;
+    messageText += `\n`;
+  }
   messageText += `\nTotal: ${receipt.totalFormatted || ""}\nThank you.`;
   return messageText;
+}
+
+function slipDate(iso) {
+  const d = iso ? new Date(iso) : new Date();
+  if (Number.isNaN(d.getTime())) return "";
+  const dd = String(d.getDate()).padStart(2, "0");
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const yyyy = d.getFullYear();
+  let h = d.getHours();
+  const min = String(d.getMinutes()).padStart(2, "0");
+  const ap = h >= 12 ? "PM" : "AM";
+  h = h % 12 || 12;
+  return `${dd}-${mm}-${yyyy} ${h}:${min} ${ap}`;
+}
+
+function slipAmt(n) {
+  return Number(n || 0).toFixed(2);
+}
+
+function shopReceiptLines(receipt) {
+  return (receipt.items || []).map((item) => {
+    if (item && item.product) {
+      const qty = Number(item.quantity || item.qty || 1);
+      const price = Number(item.product.price || item.unitPrice || 0);
+      const total = item.lineTotal != null ? Number(item.lineTotal) : price * qty;
+      return { name: item.product.title || "Item", qty, price, total };
+    }
+    const qty = Number(item.qty || item.quantity || 1);
+    const total = Number(item.lineTotal || 0);
+    const price = item.unitPrice != null ? Number(item.unitPrice) : (qty ? total / qty : 0);
+    return { name: item.productName || item.name || "Item", qty, price, total };
+  });
+}
+
+function fillShopReceiptSlip(receipt) {
+  const lines = shopReceiptLines(receipt);
+  const itemsTotal = lines.reduce((sum, line) => sum + Number(line.total || 0), 0);
+  const delivery = Number(receipt.deliveryFee || 0);
+  const grand = receipt.total != null ? Number(receipt.total) : itemsTotal + delivery;
+  const paidLabel = receipt.paid
+    ? (receipt.paymentMethod || "Paid")
+    : (receipt.paymentMethod ? `${receipt.paymentMethod} · unpaid` : "Unpaid");
+
+  if (checkoutReceiptNumber) {
+    checkoutReceiptNumber.textContent = receipt.receiptNo
+      ? `Sales Receipt No. #${receipt.receiptNo}`
+      : "Sales Receipt No. #pending";
+  }
+  if (checkoutReceiptDate) checkoutReceiptDate.textContent = slipDate(receipt.createdAt);
+  if (checkoutReceiptCustomer) {
+    const bits = [receipt.name, receipt.phone].filter(Boolean);
+    checkoutReceiptCustomer.textContent = bits.join(" · ");
+    checkoutReceiptCustomer.hidden = !bits.length;
+  }
+  if (checkoutReceiptItems) {
+    checkoutReceiptItems.innerHTML = lines.map((line, index) => `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${escapeHtml(line.name)}</td>
+        <td>${escapeHtml(line.qty)}</td>
+        <td>${slipAmt(line.price)}</td>
+        <td>${slipAmt(line.total)}</td>
+      </tr>
+    `).join("");
+  }
+  if (checkoutReceiptSubtotal) checkoutReceiptSubtotal.textContent = slipAmt(itemsTotal);
+  if (checkoutReceiptDeliveryRow) checkoutReceiptDeliveryRow.hidden = !(delivery > 0);
+  if (checkoutReceiptDelivery) checkoutReceiptDelivery.textContent = slipAmt(delivery);
+  if (checkoutReceiptTotal) checkoutReceiptTotal.textContent = `GH₵${slipAmt(grand)}`;
+  if (checkoutReceiptPaid) checkoutReceiptPaid.textContent = paidLabel;
 }
 
 function showCheckoutReceipt(receipt) {
@@ -1766,21 +2041,15 @@ function showCheckoutReceipt(receipt) {
       ? "Keep this receipt. Track it any time under My Purchases."
       : "Stock is reserved. Send this receipt on WhatsApp to finish payment.";
   }
-  if (checkoutReceiptNumber) checkoutReceiptNumber.textContent = receipt.receiptNo || "Receipt pending";
   if (checkoutReceiptRef) {
     checkoutReceiptRef.textContent = receipt.paymentReference ? ("Paystack ref: " + receipt.paymentReference) : "";
     checkoutReceiptRef.hidden = !receipt.paymentReference;
   }
-  if (checkoutReceiptItems) {
-    checkoutReceiptItems.innerHTML = (receipt.items || []).map((item) => {
-      const line = new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", minimumFractionDigits: 0 }).format(item.product.price * item.quantity);
-      return `<li><span>${escapeHtml(item.product.title)} × ${escapeHtml(item.quantity)}</span><span>${escapeHtml(line)}</span></li>`;
-    }).join("");
-  }
-  if (checkoutReceiptTotal) checkoutReceiptTotal.textContent = receipt.totalFormatted || "";
+  fillShopReceiptSlip(receipt);
   if (checkoutReceiptWhatsappBtn) {
     checkoutReceiptWhatsappBtn.textContent = receipt.paid ? "Send receipt on WhatsApp" : "Continue on WhatsApp";
   }
+  if (checkoutReceiptTrackBtn) checkoutReceiptTrackBtn.hidden = !!receipt.hideTrack;
   checkoutReceiptOverlay.classList.add("active");
   lucide.createIcons();
 }
@@ -2146,7 +2415,8 @@ function applyVerifiedCustomerToCheckoutForm() {
 
   const customer = authState.customer;
   if (!customer) return;
-  [["cust-name", customer.name], ["cust-email", customer.email], ["cust-location", customer.location]]
+  const savedLocation = String(customer.location || "").split(" · ")[0];
+  [["cust-name", customer.name], ["cust-email", customer.email], ["cust-location", savedLocation]]
     .forEach(([id, value]) => {
       const field = document.getElementById(id);
       if (field && value && !field.value.trim()) field.value = value;
@@ -2580,6 +2850,9 @@ function renderAccountOrderDetail(order) {
         </div>
       </div>
 
+      <button type="button" class="btn-modal-action verify account-detail-reorder" id="account-print-receipt">
+        <span>Print receipt</span>
+      </button>
       <button type="button" class="btn-modal-action verify account-detail-reorder" data-action="reorder" data-order-id="${escapeHtml(order.id)}">
         <span>Reorder these items</span>
       </button>
@@ -2587,7 +2860,34 @@ function renderAccountOrderDetail(order) {
   `;
 
   bindAccountOrderActions();
+  const printBtn = document.getElementById("account-print-receipt");
+  if (printBtn) {
+    printBtn.addEventListener("click", () => {
+      showCheckoutReceipt(receiptFromAccountOrder(order));
+    });
+  }
   lucide.createIcons();
+}
+
+function receiptFromAccountOrder(order) {
+  const items = orderLines(order);
+  const itemsTotal = items.reduce((sum, line) => sum + Number(line.lineTotal || 0), 0);
+  const deliveryFee = Math.max(0, Number(order.total || 0) - itemsTotal);
+  return {
+    paid: /confirm|paid|complete/i.test(String(order.status || "")),
+    name: order.customerName || "",
+    phone: "",
+    location: order.customerLocation || "",
+    receiptNo: order.receiptNo,
+    orderId: order.id,
+    paymentReference: order.paymentReference || "",
+    paymentMethod: order.paymentMethod || "",
+    items,
+    deliveryFee,
+    createdAt: order.createdAt,
+    total: order.total,
+    hideTrack: false,
+  };
 }
 
 function reorderFromOrderId(orderId) {
@@ -2673,6 +2973,7 @@ function setupAuthEventListeners() {
       if (e.target === checkoutReceiptOverlay) closeCheckoutReceipt();
     });
   }
+  if (checkoutReceiptPrintBtn) checkoutReceiptPrintBtn.addEventListener("click", () => window.print());
   if (checkoutReceiptTrackBtn) checkoutReceiptTrackBtn.addEventListener("click", openTrackedCheckoutReceipt);
   if (checkoutReceiptWhatsappBtn) {
     checkoutReceiptWhatsappBtn.addEventListener("click", () => {
