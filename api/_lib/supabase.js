@@ -7,7 +7,7 @@ const { requestJson } = require('./http');
 
 const ORDER_SELECT =
   'id,receipt_no,status,total,subtotal,payment_method,created_at,customer_name,customer_location,' +
-  'order_items(product_id,product_name,qty,unit_price,line_total)';
+  'order_items(product_id,product_name,qty,unit_price,line_total),payments(reference)';
 
 // updated_at is the only other timestamp on the row, used to date the current
 // step of the derived tracking timeline.
@@ -77,6 +77,24 @@ function getOrderForPhones(idOrReceipt, phones, cfg = config()) {
   return select('orders', params, cfg).then((rows) => rows[0] || null);
 }
 
+function findOrderByPaymentReference(reference, phones, cfg = config()) {
+  const ref = String(reference || '').trim();
+  if (!ref) return Promise.resolve(null);
+  return select(
+    'payments',
+    {
+      select: 'order_id,reference',
+      reference: `eq.${ref}`,
+      limit: '1',
+    },
+    cfg,
+  ).then((rows) => {
+    const orderId = rows[0] && rows[0].order_id;
+    if (!orderId) return null;
+    return getOrderForPhones(orderId, phones, cfg);
+  });
+}
+
 function findCustomerByPhones(phones, cfg = config()) {
   return select(
     'customers',
@@ -98,5 +116,6 @@ module.exports = {
   select,
   listOrdersByPhones,
   getOrderForPhones,
+  findOrderByPaymentReference,
   findCustomerByPhones,
 };

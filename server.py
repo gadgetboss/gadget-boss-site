@@ -78,7 +78,8 @@ ACCOUNT_ERR_LOOKUP = "Could not load your orders. Try again."
 
 ORDER_SELECT = (
     "id,receipt_no,status,total,subtotal,payment_method,created_at,customer_name,"
-    "customer_location,order_items(product_id,product_name,qty,unit_price,line_total)"
+    "customer_location,order_items(product_id,product_name,qty,unit_price,line_total),"
+    "payments(reference)"
 )
 ORDER_DETAIL_SELECT = ORDER_SELECT + ",updated_at"
 TRACKING_STEPS = (
@@ -468,6 +469,10 @@ def lookup_customer(phone):
 
 def shape_order(row):
     items = row.get("order_items")
+    payments = row.get("payments") if isinstance(row.get("payments"), list) else []
+    payment_reference = None
+    if payments:
+        payment_reference = payments[0].get("reference") or None
     return {
         "id": row.get("id"),
         "receiptNo": row.get("receipt_no") or None,
@@ -475,6 +480,7 @@ def shape_order(row):
         "total": float(row.get("total") or 0),
         "subtotal": float(row.get("subtotal") or 0),
         "paymentMethod": row.get("payment_method") or None,
+        "paymentReference": payment_reference,
         "createdAt": row.get("created_at") or None,
         "customerName": row.get("customer_name") or None,
         "customerLocation": row.get("customer_location") or None,
@@ -889,6 +895,9 @@ class DynamicCRMServer(SimpleHTTPRequestHandler):
         if request_path == "/api/auth/logout":
             self.handle_auth_logout()
             return
+        if request_path == "/api/auth/claim-order":
+            self.handle_auth_claim_order()
+            return
         if request_path.startswith("/api/crm/"):
             if not self._require_admin():
                 return
@@ -1204,9 +1213,12 @@ class DynamicCRMServer(SimpleHTTPRequestHandler):
     def handle_auth_session(self):
         cfg = hubtel_config()
         configured = bool(session_secret() and cfg["configured"])
+        orders_available = bool(supabase_config().get("configured"))
         phone = self._session_phone()
         if not phone:
-            self.send_json_response({"authenticated": False, "configured": configured})
+            self.send_json_response(
+                {"authenticated": False, "configured": configured, "ordersAvailable": orders_available}
+            )
             return
         self.send_json_response(
             {
@@ -1214,7 +1226,113 @@ class DynamicCRMServer(SimpleHTTPRequestHandler):
                 "phone": phone,
                 "maskedPhone": mask_gh_phone(phone),
                 "configured": configured,
+                "ordersAvailable": orders_available,
             }
+        )
+
+    def handle_auth_claim_order(self):
+        data, parsed_ok = self._read_json_body()
+        secret = session_secret()
+        if not secret:
+            self._auth_not_configured_response()
+            return
+        if not parsed_ok:
+            self.send_json_response({"ok": False, "error": "Invalid JSON"}, status=400)
+            return
+
+        phone = normalize_gh_phone(data.get("phone"))
+        if not phone:
+            self.send_json_response({"ok": False, "error": AUTH_ERR_INVALID_PHONE}, status=400)
+            return
+
+        reference = str(data.get("reference") or "").strip()
+        receipt_no = str(data.get("receiptNo") or "").strip()
+        if not reference and not receipt_no:
+            self.send_json_response(
+                {"ok": False, "error": "Enter your receipt number or Paystack reference."},
+                status=400,
+            )
+            return
+
+        cfg = supabase_config()
+        if not cfg["configured"]:
+            self.send_json_response(
+                {"ok": False, "ordersAvailable": False, "error": ACCOUNT_ERR_LOOKUP}
+            )
+            return
+
+        phones = gh_phone_variants(phone)
+        row = None
+        try:
+            if reference:
+                paystack_ok = not PAYSTACK_SECRET_KEY
+                if PAYSTACK_SECRET_KEY:
+                    req = urllib.request.Request(
+                        f"https://api.paystack.co/transaction/verify/{urllib.parse.quote(reference)}",
+                        headers={"Authorization": f"Bearer {PAYSTACK_SECRET_KEY}"},
+                        method="GET",
+                    )
+                    try:
+                        with urllib.request.urlopen(req, timeout=20) as response:
+                            payload = json.loads(response.read().decode("utf-8"))
+                        tx = payload.get("data") or {}
+                        paystack_ok = (
+                            payload.get("status") is True
+                            and tx.get("status") == "success"
+                            and str(tx.get("currency") or "").upper() == "GHS"
+                        )
+                    except Exception:
+                        paystack_ok = False
+                if paystack_ok:
+                    pay_rows = supabase_select(
+                        "payments",
+                        {
+                            "select": "order_id,reference",
+                            "reference": f"eq.{reference}",
+                            "limit": "1",
+                        },
+                        cfg,
+                    )
+                    order_id = (pay_rows[0] or {}).get("order_id") if pay_rows else None
+                    if order_id:
+                        params = {
+                            "select": ORDER_DETAIL_SELECT,
+                            "customer_phone": postgrest_in_list(phones),
+                            "id": f"eq.{order_id}",
+                            "limit": "1",
+                        }
+                        found = supabase_select("orders", params, cfg)
+                        row = found[0] if found else None
+            if row is None and receipt_no:
+                params = {
+                    "select": ORDER_DETAIL_SELECT,
+                    "customer_phone": postgrest_in_list(phones),
+                    "receipt_no": f"eq.{receipt_no}",
+                    "limit": "1",
+                }
+                found = supabase_select("orders", params, cfg)
+                row = found[0] if found else None
+        except RuntimeError:
+            self.send_json_response({"ok": False, "error": ACCOUNT_ERR_LOOKUP}, status=502)
+            return
+
+        if not row:
+            self.send_json_response(
+                {"ok": False, "error": "No order matches that number and receipt."},
+                status=404,
+            )
+            return
+
+        self.send_json_response(
+            {
+                "ok": True,
+                "authenticated": True,
+                "phone": phone,
+                "maskedPhone": mask_gh_phone(phone),
+                "customer": lookup_customer(phone),
+                "order": shape_order(row),
+            },
+            cookies=[self._session_cookie_header(phone, secret)],
         )
 
     # --- Customer account -------------------------------------------------

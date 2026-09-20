@@ -3,6 +3,117 @@ const { useState, useEffect, useMemo, useRef, useCallback } = React;
 const STORAGE_KEY = 'gadgetboss_pos_v1';
 const Sync = (typeof window !== 'undefined' && window.GadgetBossSync) ? window.GadgetBossSync : null;
 const syncEnabled = () => !!(Sync && Sync.isSyncConfigured && Sync.isSyncConfigured());
+const STAFF_LOGIN_ALIASES = {
+  admin: 'gadgetboss80@gmail.com',
+  manager: 'gadgetboss80@gmail.com',
+};
+
+function productNameLookup(products) {
+  const map = {};
+  (products || []).forEach((p) => { map[p.id] = p.name; });
+  return map;
+}
+
+function mapPurchaseOrder(po, names) {
+  return {
+    id: po.id,
+    supplierId: '',
+    supplierName: po.supplier_name,
+    date: String(po.purchase_date || po.created_at || '').slice(0, 10),
+    items: (po.purchase_items || []).map((it) => ({
+      productId: it.product_id,
+      name: (names && names[it.product_id]) || it.product_id,
+      qty: Number(it.qty),
+      cost: Number(it.unit_cost),
+    })),
+    total: Number(po.total_cost || 0),
+    note: po.notes || '',
+    recordedBy: '',
+    createdAt: po.created_at,
+  };
+}
+
+function mapShopExpense(row) {
+  return {
+    id: row.id,
+    category: row.category,
+    amount: Number(row.amount),
+    date: String(row.expense_date || row.created_at || '').slice(0, 10),
+    note: row.note || '',
+    recordedBy: row.recorded_by || '',
+    createdAt: row.created_at,
+  };
+}
+
+async function fetchPosPurchases(names) {
+  if (!Sync || !Sync.getSupabase) return [];
+  const { data, error } = await Sync.getSupabase()
+    .from('purchase_orders')
+    .select('*, purchase_items(*)')
+    .order('created_at', { ascending: false })
+    .limit(200);
+  if (error) {
+    console.warn('[POS] purchases fetch', error);
+    return [];
+  }
+  return (data || []).map((po) => mapPurchaseOrder(po, names));
+}
+
+async function fetchPosExpenses() {
+  if (!Sync || !Sync.getSupabase) return [];
+  const { data, error } = await Sync.getSupabase()
+    .from('shop_expenses')
+    .select('*')
+    .order('expense_date', { ascending: false })
+    .limit(500);
+  if (error) {
+    console.warn('[POS] expenses fetch', error);
+    return [];
+  }
+  return (data || []).map(mapShopExpense);
+}
+
+async function hydrateFromSupabase(store) {
+  const products = await Sync.fetchStaffProducts();
+  const names = productNameLookup(products);
+  const [remoteOrders, purchases, expenses] = await Promise.all([
+    Sync.fetchRecentOrders(200),
+    fetchPosPurchases(names),
+    fetchPosExpenses(),
+  ]);
+  return {
+    ...store,
+    products,
+    sales: remoteOrders.map(Sync.mapOrderToPosSale),
+    purchases,
+    expenses,
+    syncMode: true,
+    syncError: null,
+  };
+}
+
+async function sessionFromSupabaseAuth() {
+  if (!Sync || !Sync.getSupabase) return null;
+  const sb = Sync.getSupabase();
+  const { data } = await sb.auth.getSession();
+  const session = data && data.session;
+  const userId = session && session.user && session.user.id;
+  if (!userId) return null;
+  let role = 'Cashier';
+  let name = (session.user.email || 'Staff').split('@')[0];
+  const { data: profile } = await sb.from('profiles').select('*').eq('id', userId).maybeSingle();
+  if (profile) {
+    role = String(profile.role || 'cashier');
+    role = role.charAt(0).toUpperCase() + role.slice(1);
+    name = profile.full_name || name;
+  }
+  return {
+    userId,
+    username: session.user.email,
+    name,
+    role,
+  };
+}
 const fmt = (n) => `GH₵ ${Number(n || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtInt = (n) => `GH₵ ${Number(n || 0).toLocaleString()}`;
 const uid = () => (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`);
@@ -201,7 +312,7 @@ async function createInitialData() {
     { id: uid(), name: 'Sony Distrib West', phone: '0302987654', email: 'supply@sonywest.gh', location: 'Tema', notes: 'PlayStation & controllers', createdAt: daysAgo(45) },
   ];
 
-  const sales = buildSeedSales(products, users);
+  const sales = syncEnabled() ? [] : buildSeedSales(products, users);
   products = applySaleStock(products, sales);
 
   // Link customers on sales where names match
@@ -210,7 +321,7 @@ async function createInitialData() {
     if (c) s.customerId = c.id;
   });
 
-  const purchases = [
+  const purchases = syncEnabled() ? [] : [
     {
       id: uid(),
       supplierId: suppliers[0].id,
@@ -226,10 +337,11 @@ async function createInitialData() {
       createdAt: daysAgo(14),
     },
   ];
-  purchases[0].total = purchases[0].items.reduce((s, i) => s + i.qty * i.cost, 0);
-  // Apply purchase stock (already in seed qty; skip double-apply for demo — purchases are historical records)
+  if (purchases[0]) {
+    purchases[0].total = purchases[0].items.reduce((s, i) => s + i.qty * i.cost, 0);
+  }
 
-  const expenses = [
+  const expenses = syncEnabled() ? [] : [
     { id: uid(), category: 'Rent', amount: 2500, date: todayISO().slice(0, 8) + '01', note: 'Shop rent', recordedBy: 'admin', createdAt: daysAgo(12) },
     { id: uid(), category: 'Utilities', amount: 320, date: daysAgo(5).slice(0, 10), note: 'Electricity', recordedBy: 'manager', createdAt: daysAgo(5) },
     { id: uid(), category: 'Transport', amount: 150, date: daysAgo(2).slice(0, 10), note: 'Delivery runs', recordedBy: 'cashier', createdAt: daysAgo(2) },
@@ -388,12 +500,19 @@ function LoginScreen({ onLogin, users }) {
     setError('');
     setLoading(true);
     try {
-      // Shared DB mode: prefer Supabase Auth (email + password)
-      if (syncEnabled() && username.includes('@')) {
-        const remote = await Sync.staffSignIn(username.trim(), password);
+      // Shared DB mode: email login, or local aliases (admin) mapped to staff email
+      if (syncEnabled()) {
+        const alias = STAFF_LOGIN_ALIASES[username.trim().toLowerCase()];
+        const email = username.includes('@') ? username.trim() : alias;
+        if (!email) {
+          setError('Sign in with your staff email, or admin / admin123.');
+          setLoading(false);
+          return;
+        }
+        const remote = await Sync.staffSignIn(email, password);
         onLogin({
           id: remote.id,
-          username: remote.email || username.trim(),
+          username: remote.email || email,
           name: remote.name,
           role: remote.role,
         });
@@ -403,14 +522,7 @@ function LoginScreen({ onLogin, users }) {
 
       const user = users.find(u => u.username === username.trim() && u.password === password);
       if (!user) {
-        setError(syncEnabled()
-          ? 'Invalid credentials. For live sync, sign in with your Supabase staff email.'
-          : 'Invalid username or password');
-        setLoading(false);
-        return;
-      }
-      if (syncEnabled()) {
-        setError('Live sync is on. Sign in with your Supabase staff email (not the local demo username) so POS sales can write to the shared database.');
+        setError('Invalid username or password');
         setLoading(false);
         return;
       }
@@ -458,8 +570,8 @@ function LoginScreen({ onLogin, users }) {
           <div className="pt-2 border-t border-slate-100 text-xs text-slate-400 space-y-1">
             {syncEnabled() ? (
               <>
-                <p className="font-semibold text-slate-500 mb-1">Live sync enabled</p>
-                <p>Sign in with your Supabase staff email so sales write to the shared database.</p>
+                <p className="font-semibold text-slate-500 mb-1">Live database</p>
+                <p>admin / admin123 · or gadgetboss80@gmail.com</p>
               </>
             ) : (
               <>
@@ -524,7 +636,7 @@ function Shell({ user, page, setPage, onLogout, settings, children, sidebarOpen,
             </button>
           ))}
         </nav>
-        <div className="p-4 border-t border-white/10">
+        <div className="p-4 border-t border-white/10" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
           <div className="flex items-center gap-3 mb-3">
             <div className="w-9 h-9 rounded-full bg-accent flex items-center justify-center font-bold text-sm">
               {(user.name || user.username || '?')[0].toUpperCase()}
@@ -1241,14 +1353,19 @@ function ProductsPage({ data, update, user }) {
         : `${product.name} is live on the online store.`);
   };
 
-  const toggleOnline = (p) => {
-    const nextProducts = data.products.map((x) => (
-      x.id === p.id ? { ...x, websiteVisible: p.websiteVisible === false } : x
-    ));
+  const toggleOnline = async (p) => {
+    const updated = { ...p, websiteVisible: p.websiteVisible === false };
+    if (syncEnabled()) {
+      try {
+        await Sync.upsertPosProduct(updated);
+      } catch (err) {
+        return alert('Could not update store visibility in the shared database.\n' + (err.message || err));
+      }
+    }
+    const nextProducts = data.products.map((x) => (x.id === p.id ? updated : x));
     update({ ...data, products: nextProducts });
     if (Sync && Sync.publishCatalogue) Sync.publishCatalogue(nextProducts);
-    const nowOnline = p.websiteVisible === false;
-    setSavedMsg(nowOnline
+    setSavedMsg(updated.websiteVisible
       ? `${p.name} is now showing on the online store.`
       : `${p.name} was hidden from the online store.`);
   };
@@ -1312,7 +1429,7 @@ function ProductsPage({ data, update, user }) {
 
       <Card className="min-w-0">
         <div className="overflow-x-auto max-w-full">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm min-w-max">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-100">
                 <th className="px-4 py-3">Product</th>
@@ -1322,7 +1439,7 @@ function ProductsPage({ data, update, user }) {
                 <th className="px-4 py-3 text-right">Price</th>
                 <th className="px-4 py-3 text-right">Qty</th>
                 <th className="px-4 py-3 hidden md:table-cell">Online</th>
-                <th className="px-4 py-3 hidden md:table-cell">Barcode</th>
+                <th className="px-4 py-3 hidden xl:table-cell">Barcode</th>
                 {canEdit && <th className="px-4 py-3"></th>}
               </tr>
             </thead>
@@ -1375,7 +1492,7 @@ function ProductsPage({ data, update, user }) {
                         <Badge tone={p.websiteVisible === false ? 'slate' : 'green'}>{p.websiteVisible === false ? 'Hidden' : 'On store'}</Badge>
                       )}
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs text-slate-500 hidden md:table-cell">{p.barcode}</td>
+                    <td className="px-4 py-3 font-mono text-xs text-slate-500 hidden xl:table-cell whitespace-nowrap">{p.barcode}</td>
                     {canEdit && (
                       <td className="px-4 py-3 whitespace-nowrap">
                         <button className="p-2 min-w-[44px] min-h-[44px] hover:bg-slate-100 rounded-lg" onClick={() => openEdit(p)} aria-label="Edit product"><Icon name="Pencil" size={14} /></button>
@@ -1624,6 +1741,7 @@ function CustomersPage({ data, update }) {
 function SuppliersPage({ data, update, user }) {
   const [tab, setTab] = useState('suppliers');
   const [modal, setModal] = useState(null);
+  const [savingPurchase, setSavingPurchase] = useState(false);
   const [form, setForm] = useState({});
   const [purchaseForm, setPurchaseForm] = useState({ supplierId: '', date: todayISO(), note: '', items: [{ productId: '', qty: 1, cost: 0 }] });
 
@@ -1649,7 +1767,7 @@ function SuppliersPage({ data, update, user }) {
 
   const addPurchaseLine = () => setPurchaseForm(f => ({ ...f, items: [...f.items, { productId: '', qty: 1, cost: 0 }] }));
 
-  const savePurchase = () => {
+  const savePurchase = async () => {
     const supplier = data.suppliers.find(s => s.id === purchaseForm.supplierId);
     if (!supplier) return alert('Select supplier');
     const items = purchaseForm.items.filter(i => i.productId && Number(i.qty) > 0).map(i => {
@@ -1669,12 +1787,38 @@ function SuppliersPage({ data, update, user }) {
       recordedBy: user.username,
       createdAt: nowISO(),
     };
-    const products = data.products.map(p => {
-      const line = items.find(i => i.productId === p.id);
-      if (!line) return p;
-      return { ...p, qty: (p.qty || 0) + line.qty, costPrice: line.cost || p.costPrice };
-    });
-    update({ ...data, purchases: [purchase, ...data.purchases], products });
+
+    if (syncEnabled()) {
+      setSavingPurchase(true);
+      try {
+        const sb = Sync.getSupabase();
+        const { error } = await sb.rpc('receive_purchase', {
+          p_payload: {
+            supplierName: supplier.name,
+            notes: purchaseForm.note || '',
+            purchaseDate: purchaseForm.date,
+            items: items.map((i) => ({ productId: i.productId, qty: i.qty, unitCost: i.cost })),
+          },
+        });
+        if (error) throw error;
+        const products = await Sync.fetchStaffProducts();
+        const purchases = await fetchPosPurchases(productNameLookup(products));
+        update({ ...data, purchases, products });
+      } catch (err) {
+        alert(err.message || 'Could not save purchase');
+        setSavingPurchase(false);
+        return;
+      }
+      setSavingPurchase(false);
+    } else {
+      const products = data.products.map(p => {
+        const line = items.find(i => i.productId === p.id);
+        if (!line) return p;
+        return { ...p, qty: (p.qty || 0) + line.qty, costPrice: line.cost || p.costPrice };
+      });
+      update({ ...data, purchases: [purchase, ...data.purchases], products });
+    }
+
     setPurchaseForm({ supplierId: '', date: todayISO(), note: '', items: [{ productId: '', qty: 1, cost: 0 }] });
     setModal(null);
     setTab('purchases');
@@ -1758,7 +1902,7 @@ function SuppliersPage({ data, update, user }) {
       </Modal>
 
       <Modal open={modal === 'purchase'} onClose={() => setModal(null)} title="Record Purchase" wide
-        footer={<><Button variant="secondary" onClick={() => setModal(null)}>Cancel</Button><Button onClick={savePurchase}>Save Purchase</Button></>}>
+        footer={<><Button variant="secondary" onClick={() => setModal(null)} disabled={savingPurchase}>Cancel</Button><Button onClick={savePurchase} disabled={savingPurchase}>{savingPurchase ? 'Saving…' : 'Save Purchase'}</Button></>}>
         <div className="space-y-4">
           <div className="grid sm:grid-cols-2 gap-3">
             <Field label="Supplier">
@@ -1812,6 +1956,7 @@ function ExpensesPage({ data, update, user }) {
   const [from, setFrom] = useState('');
   const [to, setTo] = useState('');
   const [modal, setModal] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ category: 'Rent', amount: '', date: todayISO(), note: '' });
 
   const filtered = data.expenses.filter(e => {
@@ -1821,7 +1966,7 @@ function ExpensesPage({ data, update, user }) {
   });
   const total = filtered.reduce((s, e) => s + e.amount, 0);
 
-  const save = () => {
+  const save = async () => {
     if (!form.amount || Number(form.amount) <= 0) return alert('Enter amount');
     const expense = {
       id: uid(),
@@ -1832,7 +1977,29 @@ function ExpensesPage({ data, update, user }) {
       recordedBy: user.username,
       createdAt: nowISO(),
     };
-    update({ ...data, expenses: [expense, ...data.expenses] });
+    if (syncEnabled()) {
+      setSaving(true);
+      try {
+        const { error } = await Sync.getSupabase().from('shop_expenses').insert({
+          category: form.category,
+          amount: Number(form.amount),
+          expense_date: form.date,
+          note: form.note || null,
+          recorded_by: user.username || user.name,
+          created_by: data.session?.userId || null,
+        });
+        if (error) throw error;
+        const expenses = await fetchPosExpenses();
+        update({ ...data, expenses });
+      } catch (err) {
+        alert(err.message || 'Could not save expense');
+        setSaving(false);
+        return;
+      }
+      setSaving(false);
+    } else {
+      update({ ...data, expenses: [expense, ...data.expenses] });
+    }
     setModal(false);
     setForm({ category: 'Rent', amount: '', date: todayISO(), note: '' });
   };
@@ -1882,7 +2049,7 @@ function ExpensesPage({ data, update, user }) {
       </Card>
 
       <Modal open={modal} onClose={() => setModal(false)} title="Add Expense"
-        footer={<><Button variant="secondary" onClick={() => setModal(false)}>Cancel</Button><Button onClick={save}>Save</Button></>}>
+        footer={<><Button variant="secondary" onClick={() => setModal(false)} disabled={saving}>Cancel</Button><Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save'}</Button></>}>
         <div className="space-y-3">
           <Field label="Category">
             <select className={inputCls} value={form.category} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>
@@ -2217,23 +2384,25 @@ function App() {
         saveStore(store);
       }
 
-      // Hydrate from shared Supabase catalogue + orders when configured
       if (syncEnabled()) {
         try {
-          const [products, remoteOrders] = await Promise.all([
-            Sync.fetchStaffProducts(),
-            Sync.fetchRecentOrders(200),
-          ]);
-          store = {
-            ...store,
-            products: products.length ? products : store.products,
-            sales: remoteOrders.length ? remoteOrders.map(Sync.mapOrderToPosSale) : store.sales,
-            syncMode: true,
-          };
+          const staffSession = await sessionFromSupabaseAuth();
+          if (staffSession) {
+            store = await hydrateFromSupabase({ ...store, session: staffSession });
+          } else {
+            store = {
+              ...store,
+              session: null,
+              sales: [],
+              purchases: [],
+              expenses: [],
+              syncMode: true,
+            };
+          }
           saveStore(store);
         } catch (err) {
           console.warn('[POS] Supabase hydrate failed; using local cache', err);
-          store = { ...store, syncMode: false, syncError: String(err.message || err) };
+          store = { ...store, session: null, sales: [], purchases: [], expenses: [], syncMode: false, syncError: String(err.message || err) };
         }
       }
 
@@ -2252,9 +2421,12 @@ function App() {
     if (!ready || !syncEnabled() || !data) return undefined;
     const refresh = async () => {
       try {
-        const [products, remoteOrders] = await Promise.all([
-          Sync.fetchStaffProducts(),
+        const products = await Sync.fetchStaffProducts();
+        const names = productNameLookup(products);
+        const [remoteOrders, purchases, expenses] = await Promise.all([
           Sync.fetchRecentOrders(200),
+          fetchPosPurchases(names),
+          fetchPosExpenses(),
         ]);
         setData((prev) => {
           if (!prev) return prev;
@@ -2262,6 +2434,8 @@ function App() {
             ...prev,
             products,
             sales: remoteOrders.map(Sync.mapOrderToPosSale),
+            purchases,
+            expenses,
           };
           saveStore(next);
           return next;
@@ -2273,10 +2447,21 @@ function App() {
     const chProducts = Sync.subscribeProducts(refresh);
     const chOrders = Sync.subscribeOrders(refresh);
     const chMoves = Sync.subscribeInventoryMovements(refresh);
+    const extra = [];
+    try {
+      const sb = Sync.getSupabase && Sync.getSupabase();
+      if (sb) {
+        extra.push(
+          sb.channel('gb-purchases').on('postgres_changes', { event: '*', schema: 'public', table: 'purchase_orders' }, refresh).subscribe(),
+          sb.channel('gb-expenses').on('postgres_changes', { event: '*', schema: 'public', table: 'shop_expenses' }, refresh).subscribe(),
+        );
+      }
+    } catch (e) {}
     return () => {
       try { chProducts.unsubscribe(); } catch (e) {}
       try { chOrders.unsubscribe(); } catch (e) {}
       try { chMoves.unsubscribe(); } catch (e) {}
+      extra.forEach((ch) => { try { ch.unsubscribe(); } catch (e) {} });
     };
   }, [ready]);
 
@@ -2319,14 +2504,31 @@ function App() {
     if (session && !pageAllowed) setPage('dashboard');
   }, [session, pageAllowed]);
 
-  const onLogin = (u) => {
-    const next = { ...data, session: { userId: u.id, username: u.username, name: u.name, role: u.role } };
-    persist(next);
+  const onLogin = async (u) => {
+    let store = { ...data, session: { userId: u.id, username: u.username, name: u.name, role: u.role } };
+    if (syncEnabled()) {
+      try {
+        store = await hydrateFromSupabase(store);
+      } catch (err) {
+        console.warn('[POS] post-login hydrate failed', err);
+        store = { ...store, sales: [], purchases: [], expenses: [], syncError: String(err.message || err) };
+      }
+    }
+    persist(store);
     setPage('dashboard');
   };
 
-  const onLogout = () => {
-    persist({ ...data, session: null });
+  const onLogout = async () => {
+    try {
+      if (syncEnabled() && Sync.staffSignOut) await Sync.staffSignOut();
+    } catch (e) {}
+    persist({
+      ...data,
+      session: null,
+      sales: syncEnabled() ? [] : data.sales,
+      purchases: syncEnabled() ? [] : data.purchases,
+      expenses: syncEnabled() ? [] : data.expenses,
+    });
   };
 
   const onReset = async () => {

@@ -18,6 +18,8 @@ function sessionPhone(req) {
 
 /** Only the fields the account UI needs — no customer_phone/email echoed back. */
 function shapeOrder(row) {
+  const payments = Array.isArray(row.payments) ? row.payments : [];
+  const paymentReference = (payments[0] && payments[0].reference) || null;
   return {
     id: row.id,
     receiptNo: row.receipt_no || null,
@@ -25,6 +27,7 @@ function shapeOrder(row) {
     total: Number(row.total || 0),
     subtotal: Number(row.subtotal || 0),
     paymentMethod: row.payment_method || null,
+    paymentReference,
     createdAt: row.created_at || null,
     customerName: row.customer_name || null,
     customerLocation: row.customer_location || null,

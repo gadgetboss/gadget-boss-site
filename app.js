@@ -303,6 +303,8 @@ let currentCheckoutType = "whatsapp"; // 'whatsapp' or 'paystack'
 
 // Pre-configured WhatsApp Business Number (Centuryboy Shop dispatch)
 const WHATSAPP_PHONE = "233540639091";
+const INSTAGRAM_URL = "https://www.instagram.com/gadgetboss80/";
+const TIKTOK_URL = "https://www.tiktok.com/@gadgetbosss";
 
 
 // --- WISHLIST STATE VAULT ---
@@ -311,6 +313,8 @@ let wishlist = [];
 // --- DOM ELEMENT REFERENCES ---
 const productsGrid = document.getElementById("products-catalog-grid");
 const featuredProductSlot = document.getElementById("featured-product-slot");
+const featuredDropTitle = document.getElementById("featured-drop-title");
+const FEATURED_DROP_ID = "airpods-pro-3";
 const categoriesContainer = document.getElementById("categories-container");
 const searchBarInput = document.getElementById("search-bar-input");
 const headerCategorySelect = document.getElementById("header-category-select");
@@ -393,6 +397,16 @@ const accountBackBtn = document.getElementById("account-back-btn");
 const closeAccountBtn = document.getElementById("close-account-btn");
 const accountSignoutBtn = document.getElementById("account-signout-btn");
 const custPhoneVerifiedBadge = document.getElementById("cust-phone-verified-badge");
+const checkoutReceiptOverlay = document.getElementById("checkout-receipt-overlay");
+const checkoutReceiptTitle = document.getElementById("checkout-receipt-title");
+const checkoutReceiptKicker = document.getElementById("checkout-receipt-kicker");
+const checkoutReceiptNumber = document.getElementById("checkout-receipt-number");
+const checkoutReceiptRef = document.getElementById("checkout-receipt-ref");
+const checkoutReceiptItems = document.getElementById("checkout-receipt-items");
+const checkoutReceiptTotal = document.getElementById("checkout-receipt-total");
+const checkoutReceiptTrackBtn = document.getElementById("checkout-receipt-track");
+const checkoutReceiptWhatsappBtn = document.getElementById("checkout-receipt-whatsapp");
+const checkoutReceiptCloseBtn = document.getElementById("checkout-receipt-close");
 
 // --- APP INITIALIZATION ---
 async function hydratePublicConfig() {
@@ -562,6 +576,16 @@ function setActiveCategory(category) {
   renderProducts();
 }
 
+function openCatalogCategory(category) {
+  searchQuery = "";
+  if (searchBarInput) searchBarInput.value = "";
+  setActiveCategory(category);
+  const targetSec = document.getElementById("catalog");
+  if (targetSec) {
+    targetSec.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
 // CRM writes are deliberately disabled until a verified checkout backend exists.
 // Search and wishlist interactions stay on-device rather than posting anonymous data.
 function logLeadToCRM() {
@@ -633,23 +657,17 @@ function setupEventListeners() {
   navCatItems.forEach(item => {
     item.addEventListener("click", (e) => {
       e.preventDefault();
-      const category = item.getAttribute("data-category");
-      setActiveCategory(category);
-
-      // Scroll to Catalog section smoothly
-      const targetSec = document.getElementById("catalog");
-      if (targetSec) {
-        targetSec.scrollIntoView({ behavior: "smooth", block: "start" });
-      }
+      openCatalogCategory(item.getAttribute("data-category"));
     });
   });
 
-  // Collection Banner clicks
+  // Collection Banner clicks → matching catalog category
   const bannerCards = document.querySelectorAll(".banner-card");
   bannerCards.forEach(card => {
     card.addEventListener("click", (e) => {
+      e.preventDefault();
       const category = card.getAttribute("data-category");
-      setActiveCategory(category);
+      if (category) openCatalogCategory(category);
     });
   });
 
@@ -710,7 +728,7 @@ function setupEventListeners() {
   newsletterForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const email = document.getElementById("newsletter-email").value;
-    alert(`🎯 WELCOME TO THE INNER CIRCLE!\nYour email (${email}) has been authorized for GADGETBO$$ drops notifications.`);
+    alert(`Got it. We will write to ${email} when new stock comes in.`);
     newsletterForm.reset();
   });
 
@@ -733,8 +751,32 @@ function toggleTheme() {
 }
 
 // --- RENDER CATEGORY BAR TABS ---
+const POPULAR_CATEGORY_ORDER = ["airpods", "chargers"];
+
+function categoryRank(category) {
+  const i = POPULAR_CATEGORY_ORDER.indexOf(String(category || "").toLowerCase());
+  return i === -1 ? POPULAR_CATEGORY_ORDER.length : i;
+}
+
+function sortPopularProducts(products) {
+  return products.slice().sort((a, b) => {
+    const diff = categoryRank(a.category) - categoryRank(b.category);
+    if (diff !== 0) return diff;
+    return String(a.title || "").localeCompare(String(b.title || ""), undefined, { sensitivity: "base" });
+  });
+}
+
+function orderedCatalogCategories() {
+  const found = ["all", ...new Set(PRODUCTS.map((p) => p.category))];
+  const preferred = ["all", ...POPULAR_CATEGORY_ORDER];
+  return [
+    ...preferred.filter((cat) => found.includes(cat)),
+    ...found.filter((cat) => !preferred.includes(cat)),
+  ];
+}
+
 function renderCategories() {
-  const categories = ["all", ...new Set(PRODUCTS.map(p => p.category))];
+  const categories = orderedCatalogCategories();
   const categoryMeta = {
     all: { icon: "layout-grid", label: "All" },
     airpods: { icon: "headphones", label: "Airpods" },
@@ -754,10 +796,7 @@ function renderCategories() {
     };
     return `
       <button class="tab-btn ${isActive ? 'active' : ''}" data-category="${cat}">
-        <span class="tab-icon-wrap">
-          <i data-lucide="${meta.icon}"></i>
-        </span>
-        <span class="tab-text">${meta.label}</span>
+        ${meta.label}
       </button>
     `;
   }).join("");
@@ -785,25 +824,29 @@ function renderProducts() {
     if (featuredProductSlot) {
       featuredProductSlot.innerHTML = `
         <div class="featured-empty">
-          <p>No products match the current vault filter.</p>
+          <p>Nothing in this category right now.</p>
         </div>
       `;
     }
     productsGrid.innerHTML = `
       <div class="no-results">
-        <i data-lucide="alert-triangle" style="width: 48px; height: 48px; color: var(--accent-blue); margin-bottom: 16px;"></i>
-        <p>No high-end tech matching your parameters inside the vault.</p>
-        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">Try refining your query or resetting filter tabs.</p>
+        <p>Nothing matches that search.</p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-top: 8px;">Try another name, or tap All.</p>
       </div>
     `;
     lucide.createIcons();
     return;
   }
 
-  const heroProduct = filtered[0];
-  const browseProducts = filtered;
+  const heroProduct = activeCategory === "all"
+    ? (PRODUCTS.find((p) => p.id === FEATURED_DROP_ID) || filtered[0])
+    : (filtered.find((p) => p.id === FEATURED_DROP_ID) || filtered[0]);
+  const browseProducts = activeCategory === "all" ? sortPopularProducts(filtered) : filtered;
 
   if (featuredProductSlot && heroProduct) {
+    if (featuredDropTitle) {
+      featuredDropTitle.textContent = (heroProduct.title || "AirPods Pro 3").toUpperCase();
+    }
     const heroPrice = heroProduct.price === 0
       ? "Price on Request"
       : new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', minimumFractionDigits: 0 }).format(heroProduct.price);
@@ -811,10 +854,8 @@ function renderProducts() {
       <article class="featured-product-card product-card" data-id="${heroProduct.id}" role="button" tabindex="0" aria-label="Open details for ${heroProduct.title}">
         <div class="featured-product-media">
           <img src="${heroProduct.image}" alt="${heroProduct.title}" class="featured-product-image">
-          <span class="featured-availability">${heroProduct.price > 0 ? "Accra Vault Available" : "Contact for Availability"}</span>
-          <button class="featured-quick-add" data-id="${heroProduct.id}" aria-label="Quick add ${heroProduct.title}">
-            <i data-lucide="plus"></i>
-          </button>
+          <span class="featured-availability">${heroProduct.price > 0 ? "In stock in Accra" : "Ask on WhatsApp"}</span>
+          <button class="featured-quick-add" data-id="${heroProduct.id}" aria-label="Add ${heroProduct.title}">Add</button>
         </div>
         <div class="featured-product-body">
           <div class="featured-badges">
@@ -826,10 +867,7 @@ function renderProducts() {
           <div class="featured-meta">
             <span class="featured-price">${heroPrice}</span>
           </div>
-          <button class="featured-buy-btn" data-id="${heroProduct.id}">
-            <span>BUY</span>
-            <i data-lucide="shopping-bag"></i>
-          </button>
+          <button class="featured-buy-btn" data-id="${heroProduct.id}">Buy</button>
         </div>
       </article>
     `;
@@ -865,9 +903,7 @@ function renderProducts() {
       <div class="product-card vault-thumb-card" data-id="${prod.id}" role="button" tabindex="0" aria-label="Open details for ${prod.title}">
         <div class="prod-img-container vault-thumb-image">
           <span class="${badgeClass}">${isOutOfStock ? 'OUT OF STOCK' : badgeLabel}</span>
-          <button class="card-wishlist-pin ${wishlist.includes(prod.id) ? 'pinned' : ''}" data-id="${prod.id}" aria-label="Pin to Wishlist">
-            <i data-lucide="heart" style="width: 16px; height: 16px; fill: ${wishlist.includes(prod.id) ? 'currentColor' : 'none'};"></i>
-          </button>
+          <button class="card-wishlist-pin ${wishlist.includes(prod.id) ? 'pinned' : ''}" data-id="${prod.id}" aria-label="Pin to Wishlist">${wishlist.includes(prod.id) ? "♥" : "♡"}</button>
           <img src="${prod.image}" alt="${prod.title}" class="prod-img">
         </div>
         
@@ -882,8 +918,7 @@ function renderProducts() {
           
           ${isContactOnly ? `
             <a href="https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(`Hi GADGETBO$$, I'm interested in the ${prod.title}. Is it available, and what is the price?`)}" target="_blank" class="btn-add-cart inquire-whatsapp-btn" style="color: var(--accent-blue); border-color: rgba(var(--accent-blue-rgb), 0.3); text-decoration: none; display: flex; align-items: center; gap: 8px;">
-              <i data-lucide="message-square" style="width: 16px; height: 16px;"></i>
-              <span>INQUIRE NOW</span>
+              <span>Ask on WhatsApp</span>
             </a>
           ` : isOutOfStock ? `
             <button class="btn-add-cart" disabled aria-disabled="true" style="opacity: 0.55; cursor: not-allowed;">
@@ -891,8 +926,7 @@ function renderProducts() {
             </button>
           ` : `
             <button class="btn-add-cart add-to-cart-btn" data-id="${prod.id}">
-              <i data-lucide="plus" style="width: 16px; height: 16px;"></i>
-              <span>ADD TO CART</span>
+              <span>Add to cart</span>
             </button>
           `}
         </div>
@@ -1064,10 +1098,9 @@ function renderCart() {
   if (cart.length === 0) {
     cartItemsContainer.innerHTML = `
       <div class="cart-empty-message">
-        <i data-lucide="shopping-bag" style="width: 64px; height: 64px; color: var(--text-muted);"></i>
         <div>
-          <h4 style="font-weight: 700; margin-bottom: 6px;">Your Cart is Empty</h4>
-          <p style="font-size: 0.85rem; color: var(--text-muted);">Browse the storefront drops catalog and add items.</p>
+          <h4 style="font-weight: 700; margin-bottom: 6px;">Your cart is empty</h4>
+          <p style="font-size: 0.85rem; color: var(--text-muted);">Add something from the shop.</p>
         </div>
       </div>
     `;
@@ -1094,10 +1127,7 @@ function renderCart() {
                 <button class="btn-qty btn-plus" data-id="${item.product.id}">+</button>
               </div>
               
-              <button class="btn-remove-item" data-id="${item.product.id}">
-                <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
-                <span>Remove</span>
-              </button>
+              <button class="btn-remove-item" data-id="${item.product.id}">Remove</button>
             </div>
           </div>
         </div>
@@ -1161,6 +1191,13 @@ function formatProductPrice(product) {
   return formatGhs(product.price);
 }
 
+function formatSpecLabel(key) {
+  return String(key || "")
+    .replace(/[_-]+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 function openProductDetail(productId) {
   const product = PRODUCTS.find(p => p.id === productId);
   if (!product) return;
@@ -1179,18 +1216,12 @@ function openProductDetail(productId) {
   productDetailPrice.textContent = price;
   productDetailEstimate.textContent = estimate;
 
-  const specEntries = [
-    ["Futuristic Design", "Premium finish"],
-    ["Built-in Microphone", product.specs?.microphone || "High clarity"],
-    ["Haptic Feedback", product.specs?.feedback || "Responsive"],
-    ["Fast Charge", product.specs?.charging || "USB-C"]
-  ];
-  productDetailSpecs.innerHTML = specEntries.map(([label, value], idx) => `
+  const specEntries = Object.entries(product.specs || {});
+  productDetailSpecs.innerHTML = specEntries.map(([label, value]) => `
     <div class="product-detail-spec">
-      <span class="product-detail-spec-icon"><i data-lucide="${["gamepad-2","mic","sparkles","zap"][idx]}"></i></span>
       <div>
-        <span class="product-detail-spec-label">${label}</span>
-        <span class="product-detail-spec-value">${value}</span>
+        <span class="product-detail-spec-label">${escapeHtml(formatSpecLabel(label))}</span>
+        <span class="product-detail-spec-value">${escapeHtml(String(value))}</span>
       </div>
     </div>
   `).join("");
@@ -1236,10 +1267,11 @@ function paymentMethodForProvider(provider) {
   return provider === "card" ? "Card" : "MoMo";
 }
 
-async function recordOnlineOrder({ name, email, phone, location, paymentMethod, status, idempotencyKey }) {
+async function recordOnlineOrder({ name, email, phone, location, paymentMethod, status, idempotencyKey, paymentReference }) {
   const Sync = window.GadgetBossSync;
+  const customerPhone = normalizeGhanaPhone(phone) || String(phone || "").trim();
   if (!(Sync && Sync.isSyncConfigured())) {
-    return { ok: true, receiptNo: "" };
+    return { ok: true, receiptNo: "", orderId: "" };
   }
   const result = await Sync.completeOrder({
     idempotencyKey,
@@ -1247,9 +1279,10 @@ async function recordOnlineOrder({ name, email, phone, location, paymentMethod, 
     status,
     paymentMethod,
     customerName: name,
-    customerPhone: phone,
+    customerPhone,
     customerEmail: email,
     customerLocation: location,
+    paymentReference: paymentReference || "",
     items: cart.map((item) => ({
       productId: item.product.id,
       qty: item.quantity,
@@ -1266,7 +1299,7 @@ async function recordOnlineOrder({ name, email, phone, location, paymentMethod, 
         : (result.error || "Could not place order"),
     };
   }
-  return { ok: true, receiptNo: result.receipt_no || "" };
+  return { ok: true, receiptNo: result.receipt_no || "", orderId: result.order_id || "" };
 }
 
 async function verifyPaystackPayment(reference, amountPesewas) {
@@ -1363,6 +1396,7 @@ async function finalizePaystackOrder({ name, email, phone, location, provider, t
     quantity: item.quantity,
   }));
   localStorage.setItem("gadgetboss-last-checkout", JSON.stringify(cartSnapshot));
+  const totalPriceFormatted = new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", minimumFractionDigits: 0 }).format(totalPrice);
 
   let receiptNo = "";
   try {
@@ -1374,40 +1408,36 @@ async function finalizePaystackOrder({ name, email, phone, location, provider, t
       paymentMethod: paymentMethodForProvider(provider),
       status: "CONFIRMED",
       idempotencyKey: `paystack-${reference}`,
+      paymentReference: reference,
     });
     if (!recorded.ok) {
       alert(`${recorded.error}\n\nPayment reference: ${reference}\nPlease send this reference to GADGETBO$$ on WhatsApp so we can confirm your order.`);
       return;
     }
     receiptNo = recorded.receiptNo;
+    await claimCheckoutSession({ phone, reference, receiptNo });
     cart = [];
     saveCart();
     renderCart();
     await hydrateCatalogueFromSupabase();
     renderProducts();
+    showCheckoutReceipt({
+      paid: true,
+      name,
+      email,
+      phone,
+      location,
+      receiptNo,
+      orderId: recorded.orderId,
+      paymentReference: reference,
+      totalFormatted: totalPriceFormatted,
+      items: cartSnapshot,
+    });
+    return;
   } catch (err) {
     console.error(err);
     alert(`Payment succeeded, but the order could not be saved automatically.\nPaystack ref: ${reference}\n${err.message || err}`);
     return;
-  }
-
-  const totalPriceFormatted = new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", minimumFractionDigits: 0 }).format(totalPrice);
-  const notify = confirm(
-    `Payment received${receiptNo ? ` (order ${receiptNo})` : ""}.\nPaystack ref: ${reference}\nTotal: ${totalPriceFormatted}\n\nOpen WhatsApp to send the shop your receipt?`
-  );
-  if (notify) {
-    let messageText = `Hi GADGETBO$$,\n\nI have paid via Paystack.\n`;
-    if (receiptNo) messageText += `Order ref: ${receiptNo}\n`;
-    messageText += `Paystack ref: ${reference}\n`;
-    messageText += `Name: ${name}\nPhone: ${phone}\n`;
-    if (email) messageText += `Email: ${email}\n`;
-    messageText += `Location: ${location}\n\nItems:\n`;
-    cartSnapshot.forEach((item, idx) => {
-      const itemPrice = new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", minimumFractionDigits: 0 }).format(item.product.price * item.quantity);
-      messageText += `${idx + 1}. ${item.product.title} x ${item.quantity} — ${itemPrice}\n`;
-    });
-    messageText += `\nTotal: ${totalPriceFormatted}\nThank you.`;
-    window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(messageText)}`, "_blank");
   }
 }
 
@@ -1432,18 +1462,12 @@ function openCheckoutModal(type) {
   if (type === "whatsapp") {
     checkoutModalTitle.innerText = "WhatsApp Order Details";
     modalSubmitBtn.className = "btn-modal-action whatsapp";
-    modalSubmitBtn.innerHTML = `
-      <i data-lucide="message-square"></i>
-      <span>SEND WHATSAPP ORDER</span>
-    `;
+    modalSubmitBtn.innerHTML = `Send WhatsApp order`;
     momoFields.style.display = "none";
   } else {
     checkoutModalTitle.innerText = "Pay with Paystack";
     modalSubmitBtn.className = "btn-modal-action paystack";
-    modalSubmitBtn.innerHTML = `
-      <i data-lucide="credit-card"></i>
-      <span>PAY NOW</span>
-    `;
+    modalSubmitBtn.innerHTML = `Pay now`;
     momoFields.style.display = "block";
   }
 
@@ -1505,6 +1529,7 @@ async function handleCheckoutSubmit(e) {
         return;
       }
       receiptNo = recorded.receiptNo;
+      await claimCheckoutSession({ phone, receiptNo });
       if (receiptNo) {
         cart = [];
         saveCart();
@@ -1512,35 +1537,24 @@ async function handleCheckoutSubmit(e) {
         await hydrateCatalogueFromSupabase();
         renderProducts();
       }
+      showCheckoutReceipt({
+        paid: false,
+        name,
+        email,
+        phone,
+        location,
+        receiptNo,
+        orderId: recorded.orderId,
+        paymentReference: "",
+        totalFormatted: totalPriceFormatted,
+        items: cartSnapshot,
+      });
     } catch (err) {
       console.error(err);
       alert('Could not reserve stock for this order. Please try again.\n' + (err.message || err));
       return;
     }
-
-    let messageText = `Hi GADGETBO$$,\n\n`;
-    messageText += `I would like to place an order.\n\n`;
-    if (receiptNo) messageText += `Order ref: ${receiptNo}\n`;
-    messageText += `Name: ${name}\n`;
-    messageText += `Phone: ${phone}\n`;
-    if (email) messageText += `Email: ${email}\n`;
-    messageText += `Location: ${location}\n`;
-    messageText += `\nItems:\n`;
-
-    cartSnapshot.forEach((item, idx) => {
-      const itemPrice = new Intl.NumberFormat('en-GH', { style: 'currency', currency: 'GHS', minimumFractionDigits: 0 }).format(item.product.price * item.quantity);
-      messageText += `${idx + 1}. ${item.product.title} x ${item.quantity} — ${itemPrice}\n`;
-    });
-
-    messageText += `\nTotal: ${totalPriceFormatted}\n\n`;
-    messageText += receiptNo
-      ? `Stock has been reserved. Please confirm payment details. Thank you.`
-      : `Please confirm availability and how I should pay. Thank you.`;
-
-    const encodedText = encodeURIComponent(messageText);
-    const whatsappUrl = `https://wa.me/${WHATSAPP_PHONE}?text=${encodedText}`;
-
-    window.open(whatsappUrl, "_blank");
+    return;
   }
 }
 
@@ -1553,6 +1567,7 @@ const AUTH_API = {
   verifyOtp: "/api/auth/verify-otp",
   resendOtp: "/api/auth/resend-otp",
   logout: "/api/auth/logout",
+  claimOrder: "/api/auth/claim-order",
   orders: "/api/account/orders"
 };
 
@@ -1562,12 +1577,15 @@ const VERIFY_INTRO_TRACKING = "Confirm your number to see live delivery tracking
 
 const authState = {
   loaded: false,
-  configured: null, // false once we know OTP login is unavailable
+  configured: null, // OTP send available
+  ordersAvailable: false,
   authenticated: false,
   phone: "",
   maskedPhone: "",
   customer: null
 };
+
+let lastCheckoutReceipt = null;
 
 const verifyFlow = {
   open: false,
@@ -1657,10 +1675,12 @@ function escapeHtml(value) {
 
 function applySessionPayload(data) {
   authState.loaded = true;
-  authState.configured = data.configured !== false;
+  authState.configured = data.configured === true;
+  if (typeof data.ordersAvailable === "boolean") {
+    authState.ordersAvailable = data.ordersAvailable;
+  }
   authState.authenticated = !!data.authenticated;
 
-  // A signed-out session carries no identity, so never hold on to one.
   if (!authState.authenticated) {
     authState.phone = "";
     authState.maskedPhone = "";
@@ -1673,11 +1693,10 @@ function applySessionPayload(data) {
   if (data.customer) authState.customer = data.customer;
 }
 
-// Called whenever the auth API is absent or broken: the storefront then behaves
-// exactly as it did before OTP login existed.
 function markAuthUnavailable() {
   authState.loaded = true;
   authState.configured = false;
+  authState.ordersAvailable = false;
   authState.authenticated = false;
   authState.phone = "";
   authState.maskedPhone = "";
@@ -1697,6 +1716,80 @@ function getSession() {
     return authState;
   });
   return sessionRequest;
+}
+
+async function claimCheckoutSession({ phone, reference, receiptNo }) {
+  const normalized = normalizeGhanaPhone(phone) || phone;
+  const res = await apiRequest(AUTH_API.claimOrder, {
+    method: "POST",
+    body: { phone: normalized, reference: reference || "", receiptNo: receiptNo || "" },
+  });
+  if (res.reachable && res.data && res.data.ok) {
+    applySessionPayload(res.data);
+    applyVerifiedCustomerToCheckoutForm();
+    return true;
+  }
+  return false;
+}
+
+function closeCheckoutReceipt() {
+  if (checkoutReceiptOverlay) checkoutReceiptOverlay.classList.remove("active");
+}
+
+function buildCheckoutWhatsappMessage(receipt) {
+  const items = receipt.items || [];
+  let messageText = receipt.paid
+    ? `Hi GADGETBO$$,\n\nI have paid via Paystack.\n`
+    : `Hi GADGETBO$$,\n\nI would like to place an order.\n\n`;
+  if (receipt.receiptNo) messageText += `Order ref: ${receipt.receiptNo}\n`;
+  if (receipt.paymentReference) messageText += `Paystack ref: ${receipt.paymentReference}\n`;
+  messageText += `Name: ${receipt.name || ""}\nPhone: ${receipt.phone || ""}\n`;
+  if (receipt.email) messageText += `Email: ${receipt.email}\n`;
+  messageText += `Location: ${receipt.location || ""}\n\nItems:\n`;
+  items.forEach((item, idx) => {
+    const itemPrice = new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", minimumFractionDigits: 0 }).format(item.product.price * item.quantity);
+    messageText += `${idx + 1}. ${item.product.title} x ${item.quantity} — ${itemPrice}\n`;
+  });
+  messageText += `\nTotal: ${receipt.totalFormatted || ""}\nThank you.`;
+  return messageText;
+}
+
+function showCheckoutReceipt(receipt) {
+  lastCheckoutReceipt = receipt;
+  if (!checkoutReceiptOverlay) {
+    alert((receipt.paid ? "Payment received. " : "Order saved. ") + "Receipt: " + (receipt.receiptNo || "pending"));
+    return;
+  }
+  if (checkoutReceiptTitle) checkoutReceiptTitle.textContent = receipt.paid ? "Payment received" : "Order reserved";
+  if (checkoutReceiptKicker) {
+    checkoutReceiptKicker.textContent = receipt.paid
+      ? "Keep this receipt. Track it any time under My Purchases."
+      : "Stock is reserved. Send this receipt on WhatsApp to finish payment.";
+  }
+  if (checkoutReceiptNumber) checkoutReceiptNumber.textContent = receipt.receiptNo || "Receipt pending";
+  if (checkoutReceiptRef) {
+    checkoutReceiptRef.textContent = receipt.paymentReference ? ("Paystack ref: " + receipt.paymentReference) : "";
+    checkoutReceiptRef.hidden = !receipt.paymentReference;
+  }
+  if (checkoutReceiptItems) {
+    checkoutReceiptItems.innerHTML = (receipt.items || []).map((item) => {
+      const line = new Intl.NumberFormat("en-GH", { style: "currency", currency: "GHS", minimumFractionDigits: 0 }).format(item.product.price * item.quantity);
+      return `<li><span>${escapeHtml(item.product.title)} × ${escapeHtml(item.quantity)}</span><span>${escapeHtml(line)}</span></li>`;
+    }).join("");
+  }
+  if (checkoutReceiptTotal) checkoutReceiptTotal.textContent = receipt.totalFormatted || "";
+  if (checkoutReceiptWhatsappBtn) {
+    checkoutReceiptWhatsappBtn.textContent = receipt.paid ? "Send receipt on WhatsApp" : "Continue on WhatsApp";
+  }
+  checkoutReceiptOverlay.classList.add("active");
+  lucide.createIcons();
+}
+
+function openTrackedCheckoutReceipt() {
+  const target = lastCheckoutReceipt;
+  closeCheckoutReceipt();
+  const orderKey = target && (target.orderId || target.receiptNo);
+  requestAccountView("track", orderKey);
 }
 
 // The single gate: run `onVerified` immediately when OTP login is off/unreachable
@@ -2066,6 +2159,7 @@ const accountState = {
   view: "list",
   orders: null,
   activeOrder: null,
+  focusOrderId: null,
   lastFocus: null
 };
 
@@ -2111,19 +2205,20 @@ function orderItemCount(order) {
   return orderLines(order).reduce((sum, line) => sum + (Number(line.qty) || 0), 0);
 }
 
-function requestAccountView(mode) {
+function requestAccountView(mode, focusOrderId) {
   requireVerifiedSession({
     intent: "account",
     intro: mode === "track" ? VERIFY_INTRO_TRACKING : VERIFY_INTRO_ORDERS,
     successText: "Number verified. Loading your orders…",
-    onVerified: () => openAccountDrawer(mode)
+    onVerified: () => openAccountDrawer(mode, focusOrderId)
   });
 }
 
-function openAccountDrawer(mode) {
+function openAccountDrawer(mode, focusOrderId) {
   accountState.mode = mode === "track" ? "track" : "orders";
   accountState.view = "list";
   accountState.activeOrder = null;
+  accountState.focusOrderId = focusOrderId || null;
   accountState.lastFocus = document.activeElement;
 
   toggleCartDrawer(false);
@@ -2135,15 +2230,22 @@ function openAccountDrawer(mode) {
     if (accountOverlayWrapper.classList.contains("active")) closeAccountBtn.focus();
   }, 80);
 
-  if (!authState.configured) {
-    renderAccountUnavailable();
+  if (authState.authenticated) {
+    loadAccountOrders({
+      autoTrack: accountState.mode === "track" && !accountState.focusOrderId,
+      focusOrderId: accountState.focusOrderId,
+    });
     return;
   }
-  if (!authState.authenticated) {
+  if (authState.configured) {
     renderAccountSignedOut();
     return;
   }
-  loadAccountOrders({ autoTrack: accountState.mode === "track" });
+  if (authState.ordersAvailable || lastCheckoutReceipt) {
+    renderAccountClaim();
+    return;
+  }
+  renderAccountUnavailable();
 }
 
 function closeAccountDrawer() {
@@ -2170,7 +2272,6 @@ function renderAccountSkeletons() {
 function renderAccountNotice(icon, title, text, action) {
   accountDrawerBody.innerHTML = `
     <div class="account-empty">
-      <span class="account-empty-icon"><i data-lucide="${icon}"></i></span>
       <h4 class="account-empty-title">${escapeHtml(title)}</h4>
       <p class="account-empty-text">${escapeHtml(text)}</p>
       ${action || ""}
@@ -2210,7 +2311,53 @@ function renderAccountSignedOut() {
   if (btn) {
     btn.addEventListener("click", () => {
       closeAccountDrawer();
-      requestAccountView(accountState.mode);
+      requestAccountView(accountState.mode, accountState.focusOrderId);
+    });
+  }
+}
+
+function renderAccountClaim() {
+  resetAccountHeader();
+  accountDrawerFooter.hidden = true;
+  const seedPhone = lastCheckoutReceipt && lastCheckoutReceipt.phone
+    ? toLocalGhanaPhone(lastCheckoutReceipt.phone)
+    : "";
+  const seedReceipt = (lastCheckoutReceipt && lastCheckoutReceipt.receiptNo) || "";
+  accountDrawerBody.innerHTML = `
+    <div class="account-empty">
+      <h4 class="account-empty-title">Find your receipt</h4>
+      <p class="account-empty-text">Enter the WhatsApp number and receipt from checkout to open My Purchases and tracking.</p>
+      <form id="account-claim-form" class="account-claim-form">
+        <label class="modal-label" for="account-claim-phone">WhatsApp number</label>
+        <input id="account-claim-phone" class="modal-input" type="tel" inputmode="numeric" required placeholder="054 123 4567" value="${escapeHtml(seedPhone)}">
+        <label class="modal-label" for="account-claim-receipt">Receipt number</label>
+        <input id="account-claim-receipt" class="modal-input" type="text" required placeholder="GB-A1B2C3D4" value="${escapeHtml(seedReceipt)}">
+        <p class="verify-status" id="account-claim-status" role="status"></p>
+        <button type="submit" class="account-btn-solid" id="account-claim-btn">Show my order</button>
+      </form>
+    </div>
+  `;
+  lucide.createIcons();
+  const form = document.getElementById("account-claim-form");
+  if (form) {
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const statusEl = document.getElementById("account-claim-status");
+      const phone = document.getElementById("account-claim-phone").value;
+      const receiptNo = document.getElementById("account-claim-receipt").value.trim();
+      const btn = document.getElementById("account-claim-btn");
+      if (btn) btn.disabled = true;
+      const ok = await claimCheckoutSession({ phone, receiptNo });
+      if (btn) btn.disabled = false;
+      if (!ok) {
+        if (statusEl) statusEl.textContent = "No order matches that number and receipt.";
+        return;
+      }
+      updateAccountSubtitle();
+      loadAccountOrders({
+        autoTrack: accountState.mode === "track" && !receiptNo,
+        focusOrderId: accountState.focusOrderId || receiptNo,
+      });
     });
   }
 }
@@ -2234,7 +2381,8 @@ async function loadAccountOrders(options) {
     authState.authenticated = false;
     authState.customer = null;
     updateAccountSubtitle();
-    renderAccountSignedOut();
+    if (authState.configured) renderAccountSignedOut();
+    else renderAccountClaim();
     return;
   }
   if (data.configured === false) {
@@ -2253,6 +2401,18 @@ async function loadAccountOrders(options) {
 
   accountState.orders = Array.isArray(data.orders) ? data.orders : [];
 
+  const focusId = opts.focusOrderId || accountState.focusOrderId;
+  if (focusId) {
+    const match = accountState.orders.find((order) =>
+      String(order.id) === String(focusId) || String(order.receiptNo) === String(focusId)
+    );
+    if (match) {
+      openAccountOrderDetail(match.id);
+      return;
+    }
+    openAccountOrderDetail(focusId);
+    return;
+  }
   if (opts.autoTrack && accountState.orders.length) {
     openAccountOrderDetail(accountState.orders[0].id);
     return;
@@ -2272,7 +2432,7 @@ function renderAccountOrders() {
       "shopping-bag",
       "No orders yet",
       "Once you check out, every order shows up here with its delivery progress.",
-      `<button type="button" class="account-btn-solid" id="account-browse-btn">Browse the vault</button>`
+      `<button type="button" class="account-btn-solid" id="account-browse-btn">Back to the shop</button>`
     );
     accountDrawerFooter.hidden = !authState.authenticated;
     const browse = document.getElementById("account-browse-btn");
@@ -2373,6 +2533,10 @@ function renderAccountOrderDetail(order) {
     .map((bit) => escapeHtml(bit))
     .join(" <span class=\"account-meta-dot\">•</span> ");
 
+  const payRef = order.paymentReference
+    ? `<p class="account-order-meta">Paystack ref: ${escapeHtml(order.paymentReference)}</p>`
+    : "";
+
   accountDrawerBody.innerHTML = `
     <div class="account-detail">
       <div class="account-detail-head">
@@ -2380,6 +2544,7 @@ function renderAccountOrderDetail(order) {
         <span class="account-status-badge is-${orderStatusTone(tracking.status || order.status)}">${escapeHtml(prettifyStatus(tracking.status || order.status))}</span>
       </div>
       <p class="account-order-meta">${metaBits}</p>
+      ${payRef}
 
       ${steps.length ? `
         <h4 class="account-section-title">Delivery tracking</h4>
@@ -2501,6 +2666,20 @@ function setupAuthEventListeners() {
   verifyModalOverlay.addEventListener("click", (e) => {
     if (e.target === verifyModalOverlay) closeVerifyModal();
   });
+
+  if (checkoutReceiptCloseBtn) checkoutReceiptCloseBtn.addEventListener("click", closeCheckoutReceipt);
+  if (checkoutReceiptOverlay) {
+    checkoutReceiptOverlay.addEventListener("click", (e) => {
+      if (e.target === checkoutReceiptOverlay) closeCheckoutReceipt();
+    });
+  }
+  if (checkoutReceiptTrackBtn) checkoutReceiptTrackBtn.addEventListener("click", openTrackedCheckoutReceipt);
+  if (checkoutReceiptWhatsappBtn) {
+    checkoutReceiptWhatsappBtn.addEventListener("click", () => {
+      if (!lastCheckoutReceipt) return;
+      window.open(`https://wa.me/${WHATSAPP_PHONE}?text=${encodeURIComponent(buildCheckoutWhatsappMessage(lastCheckoutReceipt))}`, "_blank");
+    });
+  }
 
   verifyPhoneInput.addEventListener("input", syncVerifyPhoneButton);
   verifyPhoneForm.addEventListener("submit", (e) => {

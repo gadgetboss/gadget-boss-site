@@ -111,7 +111,7 @@
     <nav class="nav-category-bar">
       <div class="nav-cat-container">
         <ul class="nav-cat-links">
-          <li><a href="#catalog" class="nav-cat-item active" data-category="all">All Drops</a></li>
+          <li><a href="#catalog" class="nav-cat-item active" data-category="all">All</a></li>
           <li><a href="#catalog" class="nav-cat-item" data-category="airpods">Airpods</a></li>
           <li><a href="#catalog" class="nav-cat-item" data-category="chargers">Chargers</a></li>
           <li><a href="#catalog" class="nav-cat-item" data-category="accessories">Accessories</a></li>
@@ -131,10 +131,10 @@
     <section class="collection-banners">
       <div class="banners-container">
         <!-- Banner 1: PlayStation -->
-        <a href="#catalog" class="banner-card blue-angled" data-category="playstation">
+        <a href="#catalog" class="banner-card blue-angled" data-category="playstation" aria-label="Open PlayStation collection">
           <div class="banner-text">
             <h3 class="banner-title">PlayStation<br>Collection</h3>
-            <span class="banner-link">Gain Access <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i></span>
+            <span class="banner-link">Shop</span>
           </div>
           <div class="banner-img-wrap">
             <img src="assets/playstation_5.png" alt="PlayStation" class="banner-product-img">
@@ -142,10 +142,10 @@
         </a>
 
         <!-- Banner 2: AirPods -->
-        <a href="#catalog" class="banner-card silver-angled" data-category="airpods">
+        <a href="#catalog" class="banner-card silver-angled" data-category="airpods" aria-label="Open AirPods collection">
           <div class="banner-text">
             <h3 class="banner-title">Airpods<br>Collection</h3>
-            <span class="banner-link">Gain Access <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i></span>
+            <span class="banner-link">Shop</span>
           </div>
           <div class="banner-img-wrap">
             <img src="assets/airpods_pro_3.jpg" alt="AirPods" class="banner-product-img">
@@ -153,10 +153,10 @@
         </a>
 
         <!-- Banner 3: Controllers -->
-        <a href="#catalog" class="banner-card blue-angled controllers-card" data-category="controllers">
+        <a href="#catalog" class="banner-card blue-angled controllers-card" data-category="controllers" aria-label="Open Controllers collection">
           <div class="banner-text">
             <h3 class="banner-title">Controllers<br>Collection</h3>
-            <span class="banner-link">Gain Access <i data-lucide="arrow-right" style="width: 16px; height: 16px;"></i></span>
+            <span class="banner-link">Shop</span>
           </div>
           <div class="banner-img-wrap">
             <img src="assets/ps5_controller.png" alt="Controllers" class="banner-product-img">
@@ -177,7 +177,7 @@
         <div class="vault-feature-area">
           <div class="vault-panel-head">
             <span class="store-subtitle">Featured Drop</span>
-            <h3 class="store-title">AIRPODS PRO 3RD GEN</h3>
+            <h3 class="store-title" id="featured-drop-title">AIRPODS PRO 3</h3>
           </div>
           <div id="featured-product-slot"></div>
         </div>
@@ -195,30 +195,30 @@
       </div>
     </section>
 
-    <!-- TRUST BADGES -->
-    <section class="trust-badges">
+    <!-- SHOP FACTS -->
+    <section class="trust-badges" aria-label="Shop details">
       <div class="trust-container">
-        <div class="trust-card">
-          <div class="trust-icon-wrapper">
-            <i data-lucide="award"></i>
-          </div>
-          <h3 class="trust-title">100% Authentic Quality</h3>
-          <p class="trust-desc">Every piece in our vault is certified genuine, serial-verified, and backed by the GADGETBO$$ official hardware warranty.</p>
-        </div>
-        <div class="trust-card">
-          <div class="trust-icon-wrapper">
-            <i data-lucide="truck"></i>
-          </div>
-          <h3 class="trust-title">Elite Express Delivery</h3>
-          <p class="trust-desc">Get it in Accra & Tema within hours. Other regions in Ghana dispatched via secure air-conditioned transit within 1-3 days.</p>
-        </div>
-        <div class="trust-card">
-          <div class="trust-icon-wrapper">
-            <i data-lucide="lock"></i>
-          </div>
-          <h3 class="trust-title">Secure MOMO & Card Check</h3>
-          <p class="trust-desc">Pay securely with card or Mobile Money through Paystack, or send your order on WhatsApp.</p>
-        </div>
+        <article class="trust-card">
+          <p class="trust-kicker">Original</p>
+          <h3 class="trust-title">Sealed stock only</h3>
+          <p class="trust-desc">AirPods, chargers and consoles come sealed. No used units. Warranty on what you buy from the shop.</p>
+        </article>
+        <article class="trust-card">
+          <p class="trust-kicker">Delivery</p>
+          <h3 class="trust-title">Same-day Accra &amp; Tema</h3>
+          <p class="trust-desc">Order in the morning, get it the same day in Accra and Tema. Other regions 1–3 days. Pickup at Tudu, beside Tobinco Pharmacy.</p>
+        </article>
+        <article class="trust-card">
+          <p class="trust-kicker">Payment</p>
+          <h3 class="trust-title">MoMo, card or WhatsApp</h3>
+          <p class="trust-desc">Pay online with Mobile Money or card. Prefer to talk first? WhatsApp <a href="https://wa.me/233540639091">054 063 9091</a>.</p>
+          <p class="trust-pays">
+            <span>MoMo</span>
+            <span>Visa</span>
+            <span>Mastercard</span>
+            <span>WhatsApp</span>
+          </p>
+        </article>
       </div>
     </section>
   </main>
@@ -232,68 +232,57 @@
           <span class="logo-text"><span class="logo-gadget">Gadget</span><span class="logo-boss">BO$$</span></span>
         </a>
         <p class="footer-desc">
-          Cultivating a world of luxury hardware, authentic audio, custom consoles, and elite digital craftsmanship since 2026.
+          Gadget shop in Tudu, Accra. AirPods, chargers and PlayStation. Come pick up beside Tobinco Pharmacy.
         </p>
         <p class="footer-desc" style="margin-top: 12px;">
           <a href="mailto:gadgetboss80@gmail.com" style="color: var(--accent-blue);">gadgetboss80@gmail.com</a><br>
-          <a href="https://wa.me/233540639091" style="color: var(--accent-blue);">+233 54 063 9091</a><br>
+          <a href="https://wa.me/233540639091" style="color: var(--accent-blue);">054 063 9091</a><br>
           Tudu, beside Tobinco Pharmacy
         </p>
         <div class="social-links">
-          <a href="https://wa.me/233540639091" target="_blank" rel="noreferrer" class="btn-icon" aria-label="Chat with GADGETBO$$ on WhatsApp">
-            <i data-lucide="message-circle" style="width: 18px; height: 18px;"></i>
-          </a>
-          <a href="mailto:gadgetboss80@gmail.com" class="btn-icon" aria-label="Email GadgetBoss">
-            <i data-lucide="mail" style="width: 18px; height: 18px;"></i>
-          </a>
-          <a href="#catalog" class="btn-icon" aria-label="Browse the product catalog">
-            <i data-lucide="package" style="width: 18px; height: 18px;"></i>
-          </a>
+          <a href="https://www.instagram.com/gadgetboss80/" target="_blank" rel="noreferrer" class="social-link">Instagram</a>
+          <a href="https://www.tiktok.com/@gadgetbosss" target="_blank" rel="noreferrer" class="social-link">TikTok</a>
+          <a href="https://wa.me/233540639091" target="_blank" rel="noreferrer" class="social-link">WhatsApp</a>
+          <a href="mailto:gadgetboss80@gmail.com" class="social-link">Email</a>
         </div>
       </div>
 
       <div>
-        <h4 class="footer-title">THE DIRECTORY</h4>
+        <h4 class="footer-title">Shop</h4>
         <ul class="footer-links">
-          <li class="footer-link-item"><a href="#home">Home Base</a></li>
-          <li class="footer-link-item"><a href="#catalog">Vault Drops</a></li>
+          <li class="footer-link-item"><a href="#home">Home</a></li>
+          <li class="footer-link-item"><a href="#catalog">Products</a></li>
           <li class="footer-link-item"><a href="legal/faq.html">FAQ</a></li>
           <li class="footer-link-item"><a href="legal/contact.html">Contact</a></li>
         </ul>
       </div>
 
       <div>
-        <h4 class="footer-title">LEGAL INFO</h4>
+        <h4 class="footer-title">Help</h4>
         <ul class="footer-links">
-          <li class="footer-link-item"><a href="legal/terms.html">Terms of Access</a></li>
-          <li class="footer-link-item"><a href="legal/privacy.html">Privacy Security</a></li>
+          <li class="footer-link-item"><a href="legal/terms.html">Terms</a></li>
+          <li class="footer-link-item"><a href="legal/privacy.html">Privacy</a></li>
           <li class="footer-link-item"><a href="legal/shipping.html">Delivery</a></li>
-          <li class="footer-link-item"><a href="legal/refund.html">Refund Policy</a></li>
-          <li class="footer-link-item"><a href="legal/warranty.html">Warranty Details</a></li>
+          <li class="footer-link-item"><a href="legal/refund.html">Refunds</a></li>
+          <li class="footer-link-item"><a href="legal/warranty.html">Warranty</a></li>
         </ul>
       </div>
 
       <div class="newsletter-column">
-        <h4 class="footer-title">VAULT DROPS LIST</h4>
-        <p class="newsletter-text">Join the inner circle. Get instant notifications regarding high-demand, limited-run drops.</p>
+        <h4 class="footer-title">New stock</h4>
+        <p class="newsletter-text">Leave your email. We tell you when AirPods and chargers come in.</p>
         <form class="newsletter-form" id="newsletter-subscription-form">
-          <input type="email" placeholder="Your premium email" class="newsletter-input" required id="newsletter-email">
-          <button type="submit" class="btn-submit" aria-label="Subscribe to drops newsletter">
-            <i data-lucide="send" style="width: 16px; height: 16px;"></i>
-          </button>
+          <input type="email" placeholder="Email" class="newsletter-input" required id="newsletter-email" autocomplete="email">
+          <button type="submit" class="btn-submit" aria-label="Send email for stock updates">Send</button>
         </form>
       </div>
     </div>
 
     <div class="footer-bottom">
       <div class="footer-copy">
-        <span>© 2026 GADGETBO$$ Limited. All rights reserved.</span>
+        <span>© 2026 GadgetBoss. Tudu, Accra.</span>
       </div>
-      <div class="footer-payments">
-        <span class="pay-badge pay-paystack">PAYSTACK</span>
-        <span class="pay-badge pay-momo">MTN MOMO</span>
-        <span class="pay-badge pay-momo" style="color:#00ff85; border-color:rgba(0,255,133,0.2)">TELECEL</span>
-      </div>
+      <p class="footer-payments">Pay with MoMo or card.</p>
     </div>
   </footer>
 
@@ -304,9 +293,7 @@
     <div class="cart-drawer" id="cart-drawer-panel">
       <div class="cart-drawer-header">
         <h2 class="cart-drawer-title">Your Cart</h2>
-        <button class="btn-close-drawer" id="close-cart-btn" aria-label="Close Shopping Cart">
-          <i data-lucide="x"></i>
-        </button>
+        <button class="btn-close-drawer" id="close-cart-btn" aria-label="Close Shopping Cart">×</button>
       </div>
       
       <!-- Cart items container -->
@@ -322,12 +309,10 @@
         
         <div class="cart-actions">
           <button class="btn-checkout-paystack" id="checkout-paystack-btn" type="button">
-            <i data-lucide="credit-card"></i>
-            <span>PAY WITH PAYSTACK</span>
+            Pay with Paystack
           </button>
           <button class="btn-checkout-momo" id="checkout-whatsapp-btn" type="button">
-            <i data-lucide="message-square"></i>
-            <span>ORDER VIA WHATSAPP</span>
+            Order on WhatsApp
           </button>
         </div>
       </div>
@@ -339,9 +324,7 @@
     <div class="checkout-modal">
       <div class="modal-header">
         <h3 class="modal-title" id="checkout-modal-title">Cart Delivery Details</h3>
-        <button class="btn-close-modal" id="close-checkout-modal-btn">
-          <i data-lucide="x"></i>
-        </button>
+        <button class="btn-close-modal" id="close-checkout-modal-btn" aria-label="Close">×</button>
       </div>
       
       <form id="checkout-details-form">
@@ -358,10 +341,7 @@
         <div class="modal-form-group">
           <label class="modal-label" for="cust-phone">
             WhatsApp Number
-            <span class="modal-verified-badge" id="cust-phone-verified-badge" hidden>
-              <i data-lucide="shield-check"></i>
-              <span>Verified</span>
-            </span>
+            <span class="modal-verified-badge" id="cust-phone-verified-badge" hidden>Verified</span>
           </label>
           <input type="tel" id="cust-phone" class="modal-input" required placeholder="e.g. 0541234567">
         </div>
@@ -400,14 +380,38 @@
     </div>
   </div>
 
+  <!-- CHECKOUT RECEIPT -->
+  <div class="modal-overlay" id="checkout-receipt-overlay">
+    <div class="checkout-modal checkout-receipt-modal" role="dialog" aria-modal="true" aria-labelledby="checkout-receipt-title">
+      <div class="modal-header">
+        <h3 class="modal-title" id="checkout-receipt-title">Your receipt</h3>
+        <button class="btn-close-modal" id="checkout-receipt-close" type="button" aria-label="Close receipt">×</button>
+      </div>
+      <p class="checkout-receipt-kicker" id="checkout-receipt-kicker">Payment received. Keep this receipt to track your order.</p>
+      <p class="checkout-receipt-no" id="checkout-receipt-number"></p>
+      <p class="checkout-receipt-ref" id="checkout-receipt-ref"></p>
+      <ul class="checkout-receipt-items" id="checkout-receipt-items"></ul>
+      <div class="payment-summary">
+        <div class="summary-row">
+          <span>Total</span>
+          <span id="checkout-receipt-total" style="color: var(--accent-blue);"></span>
+        </div>
+      </div>
+      <button type="button" class="btn-modal-action verify" id="checkout-receipt-track">
+        <span>Track this order</span>
+      </button>
+      <button type="button" class="account-btn-ghost checkout-receipt-wa" id="checkout-receipt-whatsapp">
+        Send receipt on WhatsApp
+      </button>
+    </div>
+  </div>
+
   <!-- PHONE VERIFICATION MODAL (HUBTEL OTP) -->
   <div class="modal-overlay verify-modal-overlay" id="verify-modal-overlay">
     <div class="checkout-modal verify-modal" id="verify-modal-panel" role="dialog" aria-modal="true" aria-labelledby="verify-modal-title">
       <div class="modal-header">
         <h3 class="modal-title" id="verify-modal-title">Verify Your Number</h3>
-        <button class="btn-close-modal" id="close-verify-modal-btn" type="button" aria-label="Close verification">
-          <i data-lucide="x"></i>
-        </button>
+        <button class="btn-close-modal" id="close-verify-modal-btn" type="button" aria-label="Close verification">×</button>
       </div>
 
       <p class="verify-intro" id="verify-intro"></p>
@@ -461,7 +465,6 @@
 
       <!-- STEP 3 — SUCCESS FLASH -->
       <div class="verify-success" id="verify-success" hidden>
-        <span class="verify-success-icon"><i data-lucide="check"></i></span>
         <p class="verify-success-text" id="verify-success-text">Number verified.</p>
       </div>
 
@@ -474,26 +477,19 @@
     <div class="cart-drawer account-drawer" id="account-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="account-drawer-title">
       <div class="cart-drawer-header account-drawer-header">
         <div class="account-header-lead">
-          <button class="btn-close-drawer account-back-btn" id="account-back-btn" type="button" aria-label="Back to my orders" hidden>
-            <i data-lucide="arrow-left"></i>
-          </button>
+          <button class="btn-close-drawer account-back-btn" id="account-back-btn" type="button" aria-label="Back to my orders" hidden>Back</button>
           <div class="account-header-copy">
             <h2 class="cart-drawer-title" id="account-drawer-title">My Purchases</h2>
             <span class="account-drawer-sub" id="account-drawer-sub"></span>
           </div>
         </div>
-        <button class="btn-close-drawer" id="close-account-btn" type="button" aria-label="Close account panel">
-          <i data-lucide="x"></i>
-        </button>
+        <button class="btn-close-drawer" id="close-account-btn" type="button" aria-label="Close account panel">×</button>
       </div>
 
       <div class="cart-items-list account-drawer-body" id="account-drawer-body"></div>
 
       <div class="cart-drawer-footer account-drawer-footer" id="account-drawer-footer" hidden>
-        <button class="account-btn-ghost account-signout-btn" id="account-signout-btn" type="button">
-          <i data-lucide="log-out"></i>
-          <span>Sign out</span>
-        </button>
+        <button class="account-btn-ghost account-signout-btn" id="account-signout-btn" type="button">Sign out</button>
       </div>
     </div>
   </div>
@@ -502,15 +498,8 @@
   <div class="modal-overlay product-detail-overlay" id="product-detail-overlay">
     <div class="product-detail-modal">
       <div class="product-detail-media">
-        <button class="product-detail-icon-btn product-detail-back-btn" id="close-product-detail-btn" aria-label="Back">
-          <i data-lucide="arrow-left"></i>
-        </button>
-        <button class="product-detail-icon-btn product-detail-cart-btn" id="detail-cart-trigger" aria-label="Cart">
-          <i data-lucide="shopping-cart"></i>
-        </button>
-        <button class="product-detail-icon-btn product-detail-bookmark-btn" aria-label="Save product">
-          <i data-lucide="bookmark"></i>
-        </button>
+        <button class="product-detail-icon-btn product-detail-back-btn" id="close-product-detail-btn" type="button">Back</button>
+        <button class="product-detail-icon-btn product-detail-cart-btn" id="detail-cart-trigger" type="button">Cart</button>
         <img id="product-detail-image" src="" alt="" class="product-detail-image">
       </div>
       <div class="product-detail-content">
@@ -525,8 +514,7 @@
         </div>
         <div class="product-detail-actions">
           <button class="btn-add-cart" id="product-detail-add-to-cart">
-            <i data-lucide="plus"></i>
-            <span>Buy Now</span>
+            <span>Buy now</span>
           </button>
         </div>
       </div>
@@ -536,7 +524,6 @@
   <!-- STICKY BOTTOM QUICK ACTIONS BAR -->
   <div class="sticky-bottom-bar" id="sticky-bottom-bar">
     <div class="sticky-cart-info">
-      <i data-lucide="shopping-bag" class="sticky-cart-icon"></i>
       <div class="sticky-cart-details">
         <span class="sticky-cart-count" id="sticky-cart-items-text">2 Items selected</span>
         <span class="sticky-cart-total" id="sticky-cart-total-price">GHS 10,400.00</span>
