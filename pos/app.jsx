@@ -711,7 +711,7 @@ function Shell({ user, page, setPage, onLogout, settings, children, sidebarOpen,
                 className={`flex flex-col items-center justify-center gap-0.5 py-2 min-h-[56px] text-[10px] font-semibold ${page === item.id ? 'text-white bg-white/10' : 'text-slate-400'}`}
               >
                 <Icon name={item.icon} size={18} />
-                {item.id === 'pos' ? 'Checkout' : item.label}
+                {item.id === 'pos' ? 'Checkout' : item.id === 'online' ? 'Orders' : item.label}
               </button>
             ))}
           </div>
@@ -891,10 +891,10 @@ const DASH_TONES = [
 function DashStatCard({ label, value, hint, icon, tone }) {
   const palette = typeof tone === 'object' ? tone : DASH_TONES[0];
   return (
-    <div className={`${palette.card} rounded-2xl p-5 sm:p-6 min-h-[140px] flex items-start justify-between gap-4 shadow-sm`}>
-      <div>
+    <div className={`${palette.card} rounded-2xl p-4 sm:p-6 min-h-[120px] sm:min-h-[140px] flex items-start justify-between gap-4 shadow-sm`}>
+      <div className="min-w-0">
         <div className="text-sm font-medium opacity-90">{label}</div>
-        <div className="font-display text-3xl sm:text-4xl font-bold mt-2 leading-none">{value}</div>
+        <div className="font-display text-2xl sm:text-4xl font-bold mt-2 leading-none break-all">{value}</div>
         {hint ? <div className={`text-sm mt-3 ${palette.hint}`}>{hint}</div> : null}
       </div>
       <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${palette.icon}`}>
@@ -937,7 +937,7 @@ function Dashboard({ data, user }) {
   return (
     <div className="space-y-8">
       <section>
-        <h2 className="font-display font-bold text-2xl text-slate-900 mb-4">Stocks</h2>
+        <h2 className="pos-page-title font-display font-bold text-2xl text-slate-900 mb-4">Stocks</h2>
         <div className="grid md:grid-cols-2 gap-4">
           <DashStatCard
             label="Stock Balance"
@@ -957,12 +957,12 @@ function Dashboard({ data, user }) {
       </section>
 
       <section>
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
-          <h2 className="font-display font-bold text-xl sm:text-2xl text-slate-900">Cashier Daily Sales for Reconciliation</h2>
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold text-slate-700">Date</span>
-            <input type="date" className={inputCls} style={{ width: 170, minHeight: 40, padding: '6px 10px' }} value={dateInput} onChange={(e) => setDateInput(e.target.value)} />
-            <Button size="sm" onClick={() => setReconDate(dateInput || todayISO())}>Filter</Button>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+          <h2 className="pos-page-title font-display font-bold text-xl sm:text-2xl text-slate-900">Cashier Daily Sales for Reconciliation</h2>
+          <div className="flex items-center gap-2 w-full sm:w-auto">
+            <span className="text-sm font-semibold text-slate-700 shrink-0">Date</span>
+            <input type="date" className={`${inputCls} flex-1 sm:flex-none sm:w-[170px]`} style={{ minHeight: 40, padding: '6px 10px' }} value={dateInput} onChange={(e) => setDateInput(e.target.value)} />
+            <Button size="sm" className="shrink-0" onClick={() => setReconDate(dateInput || todayISO())}>Filter</Button>
           </div>
         </div>
         <div className="grid md:grid-cols-2 gap-4">
@@ -1158,6 +1158,33 @@ function POSPage({ data, update, user, settings }) {
     setCartOpen(false);
   };
 
+  const checkoutFields = (
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <Field label="Customer name">
+          <input className={inputCls} value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Optional" />
+        </Field>
+        <Field label="Phone">
+          <input className={inputCls} value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="Optional" />
+        </Field>
+      </div>
+      <Field label="Order discount %">
+        <input type="number" min="0" max="100" className={inputCls} value={orderDiscount} onChange={e => setOrderDiscount(Math.min(100, Math.max(0, Number(e.target.value) || 0)))} />
+      </Field>
+      <div>
+        <span className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Payment</span>
+        <div className="grid grid-cols-3 gap-2">
+          {['Cash','MoMo','Card'].map(m => (
+            <button key={m} type="button" onClick={() => setPayment(m)}
+              className={`py-3 min-h-[44px] rounded-xl text-sm font-semibold border ${payment === m ? 'bg-accent text-white border-accent' : 'bg-white border-slate-200 text-slate-600'}`}>
+              {m}
+            </button>
+          ))}
+        </div>
+      </div>
+    </>
+  );
+
   const cartPanel = (mobile = false) => (
     <>
       <div className="px-4 sm:px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-2 shrink-0">
@@ -1167,7 +1194,7 @@ function POSPage({ data, update, user, settings }) {
           {mobile && <button className="text-sm font-semibold text-accent min-h-[44px] min-w-[44px] px-2" onClick={() => setCartOpen(false)}>Done</button>}
         </div>
       </div>
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-4 space-y-3 min-h-0">
+      <div className="flex-1 overflow-y-auto overscroll-contain scrollbar-thin p-4 space-y-3 min-h-0">
         {lines.length === 0 && <EmptyState icon="ShoppingCart" text="Scan or tap products to add" />}
         {lines.map(line => (
           <div key={line.productId} className="bg-slate-50 rounded-xl p-3">
@@ -1188,30 +1215,10 @@ function POSPage({ data, update, user, settings }) {
             <div className="text-right text-sm font-bold text-slate-800 mt-1">{fmt(line.lineTotal)}</div>
           </div>
         ))}
+        {mobile && checkoutFields}
       </div>
-      <div className="p-4 border-t border-slate-100 space-y-3 shrink-0">
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <Field label="Customer name">
-            <input className={inputCls} value={customerName} onChange={e => setCustomerName(e.target.value)} placeholder="Optional" />
-          </Field>
-          <Field label="Phone">
-            <input className={inputCls} value={customerPhone} onChange={e => setCustomerPhone(e.target.value)} placeholder="Optional" />
-          </Field>
-        </div>
-        <Field label="Order discount %">
-          <input type="number" min="0" max="100" className={inputCls} value={orderDiscount} onChange={e => setOrderDiscount(Math.min(100, Math.max(0, Number(e.target.value) || 0)))} />
-        </Field>
-        <div>
-          <span className="block text-xs font-semibold text-slate-500 mb-1.5 uppercase">Payment</span>
-          <div className="grid grid-cols-3 gap-2">
-            {['Cash','MoMo','Card'].map(m => (
-              <button key={m} type="button" onClick={() => setPayment(m)}
-                className={`py-3 min-h-[44px] rounded-xl text-sm font-semibold border ${payment === m ? 'bg-accent text-white border-accent' : 'bg-white border-slate-200 text-slate-600'}`}>
-                {m}
-              </button>
-            ))}
-          </div>
-        </div>
+      <div className="p-4 border-t border-slate-100 space-y-3 shrink-0 bg-white">
+        {!mobile && checkoutFields}
         <div className="flex justify-between text-sm"><span className="text-slate-500">Subtotal</span><span className="font-semibold">{fmt(subtotal)}</span></div>
         <div className="flex justify-between items-center">
           <span className="font-display font-bold text-lg">Total</span>
@@ -1280,11 +1287,14 @@ function POSPage({ data, update, user, settings }) {
       </div>
 
       {cartOpen && (
-        <div className="lg:hidden fixed inset-0 z-50 no-print">
+        <div className="lg:hidden fixed inset-0 z-[60] no-print">
           <div className="absolute inset-0 bg-black/40" onClick={() => setCartOpen(false)} />
           <div
-            className="absolute inset-x-0 bottom-0 max-h-[88dvh] bg-white rounded-t-2xl shadow-xl flex flex-col overflow-hidden"
-            style={{ paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom))' }}
+            className="absolute inset-x-0 bg-white rounded-t-2xl shadow-xl flex flex-col overflow-hidden"
+            style={{
+              bottom: 'calc(4.5rem + env(safe-area-inset-bottom))',
+              maxHeight: 'calc(100dvh - 8.25rem - env(safe-area-inset-top) - env(safe-area-inset-bottom))',
+            }}
           >
             {cartPanel(true)}
           </div>
@@ -1505,19 +1515,69 @@ function ProductsPage({ data, update, user }) {
         </div>
       )}
       <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
-        <div className="flex flex-1 gap-2 flex-wrap">
-          <input className={`${inputCls} w-full sm:max-w-xs`} placeholder="Search products…" value={search} onChange={e => setSearch(e.target.value)} />
-          <select className={`${inputCls} max-w-[180px]`} value={category} onChange={e => setCategory(e.target.value)}>
+        <div className="flex flex-1 gap-2 min-w-0">
+          <input className={`${inputCls} flex-1 min-w-0`} placeholder="Search products…" value={search} onChange={e => setSearch(e.target.value)} />
+          <select className={`${inputCls} w-[42%] sm:w-[180px] shrink-0`} value={category} onChange={e => setCategory(e.target.value)}>
             {categories.map(c => <option key={c}>{c}</option>)}
           </select>
         </div>
-        {canEdit && <Button onClick={openNew}><Icon name="Plus" size={16} /> Add to store</Button>}
+        {canEdit && <Button className="w-full sm:w-auto" onClick={openNew}><Icon name="Plus" size={16} /> Add to store</Button>}
       </div>
       <p className="text-xs text-slate-500">Add a product here with <strong>Show on online store</strong> checked — it appears on the shop as soon as you save.</p>
 
-      <Card className="min-w-0">
+      <div className="md:hidden space-y-3">
+        {filtered.map((p) => {
+          const low = p.qty <= (p.lowStockAt ?? 3);
+          const out = p.qty <= 0;
+          return (
+            <Card key={p.id} className={`p-3 ${out ? 'out-stock' : low ? 'low-stock' : ''}`}>
+              <div className="flex gap-3">
+                <img src={p.image} alt="" className="w-14 h-14 rounded-xl object-contain bg-slate-50 shrink-0" onError={(e) => { e.target.src = '../assets/logo.png'; }} />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-slate-800 truncate">{p.name}</div>
+                  <div className="text-xs text-slate-500 mt-0.5">{p.category || '—'} · {p.qty} left{low && !out ? ' · Low' : ''}{out ? ' · Out' : ''}</div>
+                  <div className="flex items-center gap-2 mt-2">
+                    {canEdit ? (
+                      <input
+                        type="number"
+                        min="0"
+                        step="1"
+                        className="w-[7rem] text-right font-semibold rounded-lg border border-slate-200 px-2 py-2 text-base min-h-[44px]"
+                        defaultValue={p.sellingPrice}
+                        key={`${p.id}-${p.sellingPrice}`}
+                        onBlur={(e) => updatePrice(p, e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                      />
+                    ) : (
+                      <span className="font-semibold">{fmt(p.sellingPrice)}</span>
+                    )}
+                    {canEdit && (
+                      <button
+                        type="button"
+                        onClick={() => toggleOnline(p)}
+                        className={`min-h-[44px] px-3 rounded-full text-xs font-semibold ${p.websiteVisible === false ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}`}
+                      >
+                        {p.websiteVisible === false ? 'Hidden' : 'On store'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+              {canEdit && (
+                <div className="flex gap-2 mt-3">
+                  <Button size="sm" variant="secondary" className="flex-1" onClick={() => openEdit(p)}>Edit</Button>
+                  {canDelete && <Button size="sm" variant="danger" className="flex-1" onClick={() => remove(p.id)}>Delete</Button>}
+                </div>
+              )}
+            </Card>
+          );
+        })}
+        {!filtered.length && <EmptyState text="No products found" />}
+      </div>
+
+      <Card className="min-w-0 hidden md:block">
         <div className="overflow-x-auto max-w-full">
-          <table className="w-full text-sm min-w-max">
+          <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-slate-400 border-b border-slate-100">
                 <th className="px-4 py-3">Product</th>
@@ -1833,14 +1893,14 @@ function OnlineOrdersPage({ data, update, user, settings, onReload }) {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="flex items-center gap-2 text-slate-800">
           <Icon name="ShoppingCart" size={20} />
-          <h2 className="font-display font-bold text-lg">Order Processing Dashboard</h2>
+          <h2 className="pos-page-title font-display font-bold text-lg">Order Processing Dashboard</h2>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-3 sm:flex gap-2">
           <Button size="sm" variant={bucket === 'cancelled' ? 'danger' : 'secondary'} onClick={() => setBucket('cancelled')}>
-            Cancelled Orders
+            Cancelled
           </Button>
           <Button size="sm" variant={bucket === 'delivered' ? 'primary' : 'secondary'} onClick={() => setBucket('delivered')}>
-            Completed Orders
+            Completed
           </Button>
           <Button size="sm" variant="secondary" onClick={() => exportOnlineCsv(filtered)}>Export</Button>
         </div>
@@ -1859,37 +1919,65 @@ function OnlineOrdersPage({ data, update, user, settings, onReload }) {
             onClick={() => setBucket(card.id)}
             className={`${card.cls} text-white rounded-xl p-4 text-left min-h-[96px] shadow-sm ${bucket === card.id ? 'ring-4 ring-navy/20' : ''}`}
           >
-            <div className="text-3xl font-bold leading-none">{card.value}</div>
-            <div className="text-sm font-semibold mt-2">{card.label}</div>
+            <div className="text-2xl sm:text-3xl font-bold leading-none">{card.value}</div>
+            <div className="text-[11px] sm:text-sm font-semibold mt-2 leading-tight">{card.label}</div>
           </button>
         ))}
       </div>
 
-      <Card className="p-4">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-3">
-          <div className="flex items-center gap-2 text-sm text-slate-600">
-            <span>Show</span>
-            <select className={inputCls} style={{ width: 88, minHeight: 40, padding: '6px 8px' }} value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
-              {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
-            </select>
-            <span>entries</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button size="sm" variant="secondary" onClick={() => exportOnlineCsv(filtered)}>Excel</Button>
+      <Card className="p-3 sm:p-4">
+        <div className="flex flex-col gap-3">
+          <input
+            className={inputCls}
+            placeholder="Search orders"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-2 text-sm text-slate-600 mr-auto">
+              <span>Show</span>
+              <select className={inputCls} style={{ width: 88, minHeight: 40, padding: '6px 8px' }} value={pageSize} onChange={(e) => setPageSize(Number(e.target.value))}>
+                {[10, 25, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+              </select>
+            </div>
             <Button size="sm" variant="secondary" onClick={() => exportOnlineCsv(filtered)}>CSV</Button>
             <Button size="sm" variant="secondary" onClick={resetFilters}>Reset</Button>
             <Button size="sm" variant="secondary" onClick={() => onReload && onReload()}>Reload</Button>
           </div>
-          <input
-            className={`${inputCls} lg:ml-auto lg:max-w-xs`}
-            placeholder="Search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
         </div>
       </Card>
 
-      <Card className="min-w-0">
+      <div className="md:hidden space-y-3">
+        {rows.map((sale) => {
+          const items = sale.items || [];
+          const qty = items.reduce((sum, it) => sum + Number(it.qty || 0), 0);
+          const delivery = saleDelivery(sale);
+          const paid = isPaidStatus(sale.status);
+          return (
+            <Card key={sale.id} className="p-4 space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div className="font-mono text-xs font-semibold break-all">{sale.receiptNo || sale.id}</div>
+                <Badge tone={paid ? 'green' : 'amber'}>{paid ? 'Completed' : 'Pending'}</Badge>
+              </div>
+              <div className="font-semibold text-slate-800">{sale.customerName || 'Walk-in'}</div>
+              <div className="text-xs text-slate-500">{sale.customerPhone || sale.customerEmail || 'N/A'}</div>
+              <div className="text-xs text-slate-500">{items.length} items · {qty} qty · Delivery GH₵ {slipAmt(delivery.fee)}</div>
+              <div className="text-xs text-slate-500">{sale.customerLocation || delivery.label || trackingLabel(sale.status)}</div>
+              <div className="flex items-center justify-between">
+                <span className="font-bold">GH₵ {slipAmt(sale.total)}</span>
+                <span className="text-xs text-slate-500">{relativeTime(sale.createdAt)}</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <Button size="sm" variant="secondary" onClick={() => setView(sale)}>View</Button>
+                <Button size="sm" variant="secondary" onClick={() => openPrint(sale)}>Print</Button>
+              </div>
+            </Card>
+          );
+        })}
+        {!rows.length && <EmptyState icon="ShoppingCart" text="No online orders match this filter" />}
+      </div>
+
+      <Card className="min-w-0 hidden md:block">
         <div className="overflow-x-auto max-w-full">
           <table className="w-full text-sm">
             <thead>
@@ -2062,7 +2150,24 @@ function TransactionsPage({ data, user, settings }) {
         </div>
       </Card>
 
-      <Card className="min-w-0">
+      <div className="md:hidden space-y-3">
+        {filtered.map((s) => (
+          <Card key={s.id} className="p-4">
+            <div className="flex items-start justify-between gap-2">
+              <div className="font-mono text-xs font-semibold">{s.receiptNo}</div>
+              <Badge tone={s.saleType === 'POS' ? 'blue' : 'purple'}>{s.saleType}</Badge>
+            </div>
+            <div className="text-sm text-slate-500 mt-1">{new Date(s.createdAt).toLocaleDateString()} · {s.paymentMethod}</div>
+            <div className="flex items-center justify-between mt-2">
+              <span className="font-bold">{fmt(s.total)}</span>
+              <Button size="sm" variant="secondary" onClick={() => setView(s)}>Receipt</Button>
+            </div>
+          </Card>
+        ))}
+        {!filtered.length && <EmptyState icon="Receipt" text="No transactions match filters" />}
+      </div>
+
+      <Card className="min-w-0 hidden md:block">
         <div className="overflow-x-auto max-w-full">
           <table className="w-full text-sm">
             <thead>

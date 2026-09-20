@@ -47,9 +47,9 @@
       height: 100dvh;
       margin: 0;
       width: 100%;
+      max-width: 100%;
+      overflow: hidden;
     }
-    body { overflow: hidden; }
-    #root { overflow: hidden; }
     .pos-shell-header {
       flex-shrink: 0;
       position: relative;
@@ -57,6 +57,7 @@
     }
     .pos-shell-main {
       min-height: 0;
+      overflow-x: hidden;
       overflow-y: auto;
       -webkit-overflow-scrolling: touch;
     }
@@ -91,7 +92,9 @@
       .chart-wrap { height: 220px; }
       main { padding-bottom: calc(88px + env(safe-area-inset-bottom)) !important; }
       .pos-checkout { padding-bottom: calc(5.25rem + env(safe-area-inset-bottom)); }
+      .pos-page-title { font-size: 1.15rem !important; line-height: 1.25; }
     }
+    .overscroll-contain { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
     .thermal-slip {
       width: 72mm;
       max-width: 100%;

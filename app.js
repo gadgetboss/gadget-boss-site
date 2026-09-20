@@ -1423,8 +1423,8 @@ function handleScroll() {
     return;
   }
 
-  // Only show if user has scrolled past hero block (approx 500px)
-  if (window.scrollY > 500) {
+  const revealAfter = window.matchMedia("(max-width: 768px)").matches ? 80 : 500;
+  if (window.scrollY > revealAfter) {
     stickyBottomBar.classList.add("active");
   } else {
     stickyBottomBar.classList.remove("active");

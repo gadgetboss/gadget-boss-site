@@ -326,99 +326,103 @@
         <button class="btn-close-modal" id="close-checkout-modal-btn" aria-label="Close">×</button>
       </div>
       
-      <form id="checkout-details-form">
-        <div class="modal-form-group">
-          <label class="modal-label" for="cust-name">Full Name</label>
-          <input type="text" id="cust-name" class="modal-input" required placeholder="e.g. Sandra Addo">
-        </div>
-        
-        <div class="modal-form-group">
-          <label class="modal-label" for="cust-email">Email Address</label>
-          <input type="email" id="cust-email" class="modal-input" required placeholder="e.g. sandra@gmail.com">
-        </div>
-        
-        <div class="modal-form-group">
-          <label class="modal-label" for="cust-phone">
-            WhatsApp Number
-            <span class="modal-verified-badge" id="cust-phone-verified-badge" hidden>Verified</span>
-          </label>
-          <input type="tel" id="cust-phone" class="modal-input" required placeholder="e.g. 0541234567">
+      <form id="checkout-details-form" class="checkout-details-form">
+        <div class="checkout-form-scroll">
+          <div class="modal-form-group">
+            <label class="modal-label" for="cust-name">Full Name</label>
+            <input type="text" id="cust-name" class="modal-input" required placeholder="e.g. Sandra Addo">
+          </div>
+          
+          <div class="modal-form-group">
+            <label class="modal-label" for="cust-email">Email Address</label>
+            <input type="email" id="cust-email" class="modal-input" required placeholder="e.g. sandra@gmail.com">
+          </div>
+          
+          <div class="modal-form-group">
+            <label class="modal-label" for="cust-phone">
+              WhatsApp Number
+              <span class="modal-verified-badge" id="cust-phone-verified-badge" hidden>Verified</span>
+            </label>
+            <input type="tel" id="cust-phone" class="modal-input" required placeholder="e.g. 0541234567">
+          </div>
+
+          <div class="modal-form-group">
+            <label class="modal-label" for="cust-pickup">How you get it</label>
+            <label class="delivery-pickup">
+              <input type="checkbox" id="cust-pickup">
+              <span>I will pick up at Tudu, beside Tobinco Pharmacy (free)</span>
+            </label>
+          </div>
+
+          <div class="modal-form-group" id="cust-location-group">
+            <label class="modal-label" for="cust-location">Delivery area</label>
+            <input type="text" id="cust-location" class="modal-input" list="delivery-area-list" required placeholder="e.g. East Legon" autocomplete="address-level2">
+            <datalist id="delivery-area-list">
+              <option value="East Legon"></option>
+              <option value="Osu"></option>
+              <option value="Labone"></option>
+              <option value="Cantonments"></option>
+              <option value="Ridge"></option>
+              <option value="Dansoman"></option>
+              <option value="Lapaz"></option>
+              <option value="Spintex"></option>
+              <option value="Madina"></option>
+              <option value="Adenta"></option>
+              <option value="Haatso"></option>
+              <option value="Ashaley Botwe"></option>
+              <option value="Kwabenya"></option>
+              <option value="Pokuase"></option>
+              <option value="Oyibi"></option>
+              <option value="Kasoa"></option>
+              <option value="Tema"></option>
+              <option value="Nsawam"></option>
+              <option value="Dawhenya"></option>
+              <option value="Buduburam"></option>
+              <option value="Prampram"></option>
+              <option value="Kumasi"></option>
+              <option value="Takoradi"></option>
+              <option value="Cape Coast"></option>
+              <option value="Tamale"></option>
+            </datalist>
+            <p class="delivery-fee-note" id="delivery-fee-note">Type your area. The delivery fee fills in.</p>
+          </div>
+          
+          <div class="modal-form-group" id="momo-fields-container">
+            <label class="modal-label" for="cust-momo-provider">Mobile Money Network</label>
+            <select id="cust-momo-provider" class="modal-select">
+              <option value="all">Card or Mobile Money</option>
+              <option value="mtn">MTN Mobile Money</option>
+              <option value="telecel">Telecel Cash</option>
+              <option value="airteltigo">AirtelTigo Money</option>
+              <option value="card">Debit / Credit Card</option>
+            </select>
+          </div>
         </div>
 
-        <div class="modal-form-group">
-          <label class="modal-label" for="cust-pickup">How you get it</label>
-          <label class="delivery-pickup">
-            <input type="checkbox" id="cust-pickup">
-            <span>I will pick up at Tudu, beside Tobinco Pharmacy (free)</span>
-          </label>
-        </div>
-
-        <div class="modal-form-group" id="cust-location-group">
-          <label class="modal-label" for="cust-location">Delivery area</label>
-          <input type="text" id="cust-location" class="modal-input" list="delivery-area-list" required placeholder="e.g. East Legon" autocomplete="address-level2">
-          <datalist id="delivery-area-list">
-            <option value="East Legon"></option>
-            <option value="Osu"></option>
-            <option value="Labone"></option>
-            <option value="Cantonments"></option>
-            <option value="Ridge"></option>
-            <option value="Dansoman"></option>
-            <option value="Lapaz"></option>
-            <option value="Spintex"></option>
-            <option value="Madina"></option>
-            <option value="Adenta"></option>
-            <option value="Haatso"></option>
-            <option value="Ashaley Botwe"></option>
-            <option value="Kwabenya"></option>
-            <option value="Pokuase"></option>
-            <option value="Oyibi"></option>
-            <option value="Kasoa"></option>
-            <option value="Tema"></option>
-            <option value="Nsawam"></option>
-            <option value="Dawhenya"></option>
-            <option value="Buduburam"></option>
-            <option value="Prampram"></option>
-            <option value="Kumasi"></option>
-            <option value="Takoradi"></option>
-            <option value="Cape Coast"></option>
-            <option value="Tamale"></option>
-          </datalist>
-          <p class="delivery-fee-note" id="delivery-fee-note">Type your area. The delivery fee fills in.</p>
-        </div>
-        
-        <div class="modal-form-group" id="momo-fields-container">
-          <label class="modal-label" for="cust-momo-provider">Mobile Money Network</label>
-          <select id="cust-momo-provider" class="modal-select">
-            <option value="all">Card or Mobile Money</option>
-            <option value="mtn">MTN Mobile Money</option>
-            <option value="telecel">Telecel Cash</option>
-            <option value="airteltigo">AirtelTigo Money</option>
-            <option value="card">Debit / Credit Card</option>
-          </select>
-        </div>
-        
-        <div class="payment-summary">
-          <div class="summary-row">
-            <span>Items</span>
-            <span id="summary-items-count">0 items</span>
+        <div class="checkout-form-pay">
+          <div class="payment-summary">
+            <div class="summary-row">
+              <span>Items</span>
+              <span id="summary-items-count">0 items</span>
+            </div>
+            <div class="summary-row">
+              <span>Items total</span>
+              <span id="summary-items-price">GHS 0</span>
+            </div>
+            <div class="summary-row">
+              <span>Delivery</span>
+              <span id="summary-delivery-price">—</span>
+            </div>
+            <div class="summary-row">
+              <span>Total</span>
+              <span id="summary-total-price" style="color: var(--accent-blue);">GHS 0.00</span>
+            </div>
           </div>
-          <div class="summary-row">
-            <span>Items total</span>
-            <span id="summary-items-price">GHS 0</span>
-          </div>
-          <div class="summary-row">
-            <span>Delivery</span>
-            <span id="summary-delivery-price">—</span>
-          </div>
-          <div class="summary-row">
-            <span>Total</span>
-            <span id="summary-total-price" style="color: var(--accent-blue);">GHS 0.00</span>
-          </div>
+          
+          <button type="submit" class="btn-modal-action" id="modal-submit-btn">
+            <!-- Text dynamically loaded based on action (Paystack or WhatsApp) -->
+          </button>
         </div>
-        
-        <button type="submit" class="btn-modal-action" id="modal-submit-btn">
-          <!-- Text dynamically loaded based on action (Paystack or WhatsApp) -->
-        </button>
       </form>
     </div>
   </div>
@@ -463,15 +467,17 @@
         <p class="thermal-slip-thanks">Thank you</p>
       </div>
       <p class="checkout-receipt-ref no-print" id="checkout-receipt-ref"></p>
-      <button type="button" class="btn-modal-action verify no-print" id="checkout-receipt-print">
-        <span>Print receipt</span>
-      </button>
-      <button type="button" class="btn-modal-action verify no-print" id="checkout-receipt-track">
-        <span>Track this order</span>
-      </button>
-      <button type="button" class="account-btn-ghost checkout-receipt-wa no-print" id="checkout-receipt-whatsapp">
-        Send receipt on WhatsApp
-      </button>
+      <div class="checkout-receipt-actions no-print">
+        <button type="button" class="btn-modal-action verify" id="checkout-receipt-print">
+          <span>Print receipt</span>
+        </button>
+        <button type="button" class="btn-modal-action verify" id="checkout-receipt-track">
+          <span>Track this order</span>
+        </button>
+        <button type="button" class="account-btn-ghost checkout-receipt-wa" id="checkout-receipt-whatsapp">
+          Send receipt on WhatsApp
+        </button>
+      </div>
     </div>
   </div>
 
