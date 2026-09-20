@@ -303,7 +303,7 @@ let currentCheckoutType = "whatsapp"; // 'whatsapp' or 'paystack'
 
 // Pre-configured WhatsApp Business Number (Centuryboy Shop dispatch)
 const WHATSAPP_PHONE = "233540639091";
-const INSTAGRAM_URL = "https://www.instagram.com/gadgetboss80/";
+const INSTAGRAM_URL = "https://www.instagram.com/gadgetbosss_/";
 const TIKTOK_URL = "https://www.tiktok.com/@gadgetbosss";
 
 
